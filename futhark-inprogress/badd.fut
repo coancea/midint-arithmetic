@@ -1,6 +1,8 @@
 let imap  as f = map f as
 let imap2 as bs f = map2 f as bs
+let imapIntra as f = #[incremental_flattening(only_intra)] map f as
 let imap2Intra as bs f = #[incremental_flattening(only_intra)] map2 f as bs
+let imap3Intra as bs cs f = #[incremental_flattening(only_intra)] map3 f as bs cs
 
 
 -----------------------------------------------------------------------------
@@ -13,6 +15,10 @@ let imap2Intra as bs f = #[incremental_flattening(only_intra)] map2 f as bs
 type cT         = u32      --u8
 let  cTfromBool = u32.bool --u8.bool
 let  two_cT     = 2u32     --2u8
+
+--type cT         = u8
+--let  cTfromBool = u8.bool
+--let  two_cT     = 2u8
 
 ------------------------------------------------------------------------
 ---- prefix sum (scan) operator to propagate the carry
@@ -88,5 +94,5 @@ let badd0 [ipb][n][q] (areg : [ipb*n][q]u64) (breg : [ipb*n][q]u64) : [ipb*n][q]
 let badd [ipb][n][q] (as : [ipb*n][q]u64) (bs : [ipb*n][q]u64) : [ipb*n][q]u64 =
   let ash = #[glb2reg_only(1)] manifest as
   let bsh = #[glb2reg_only(1)] manifest bs
-  in  badd0 ash bsh
+  in  opaque <| badd0 ash bsh
 

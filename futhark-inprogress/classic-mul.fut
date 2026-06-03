@@ -33,14 +33,24 @@ def cpReg2Shm [M][Q] 't (Areg: [M][Q]t) : *[M*Q]t = #[unsafe]
   let f (Aacc: *acc ([M*Q]t)) (tid: i64) : acc ([M*Q]t) =
     loop Aacc for q < Q do
       write Aacc (tid*Q + q) (Areg[tid][q])
-  in opaque <| scatter_stream Ash f (iota M)
+  in scatter_stream Ash f (iota M)
 
-def from4Reg2ShmQ_bad [IPB][N][Q]
+def cpReg2ShmNoAcc [M][Q] (Areg: [M][Q]D) : *[M*Q]D = #[unsafe]
+  let f (row : [Q]D) =
+    loop res = #[scratch] replicate Q (row[0]) for q < Q do
+      let res[q] = row[q] in res
+  in flatten (map f Areg)
+
+def from4Reg2ShmQ [IPB][N][Q]
+        (Lsh:  *[(IPB*N)*(2*Q)]D)
+        (Hsh:  *[(IPB*N)*(2*Q)]D)
         (lhcs0: [IPB*N][Q+2]D) 
         (lhcs1: [IPB*N][Q+2]D)
       : ([IPB*N][2*Q]D, [IPB*N][2*Q]D) =
   #[unsafe]
-  let Hsh = replicate ((IPB*N)*(2*Q)) zeroD
+--  let Lsh = opaque <| replicate ((IPB*N)*(2*Q)) zeroD
+--  let Hsh = opaque <| replicate ((IPB*N)*(2*Q)) zeroD
+  --
   let fH (Hacc: *acc ([(IPB*N)*(2*Q)]D)) (tid: i64) : acc ([(IPB*N)*(2*Q)]D) =
     #[unsafe]
     let instance = tid / N
@@ -48,12 +58,12 @@ def from4Reg2ShmQ_bad [IPB][N][Q]
     let offset   = instance * ( N * (Q * 2) )
     --
     let twoltid = offset + Q*ltid
-    -- let Hacc = loop Hacc for qm2 < Q-2 do write Hacc (twoltid+qm2+2) zeroD    
+    let Hacc = loop Hacc for qm2 < Q-2 do write Hacc (twoltid+qm2+2) zeroD    
     let Hacc = write Hacc (twoltid+Q)   (lhcs0[tid,Q])
     let Hacc = write Hacc (twoltid+Q+1) (lhcs0[tid,Q+1])
     --
     let n_m_2ltid = offset + (2*Q)*N - Q*ltid - Q
-    -- let Hacc = loop Hacc for qm2 < Q-2 do write Hacc (twoltid+qm2+2) zeroD
+    let Hacc = loop Hacc for qm2 < Q-2 do write Hacc (twoltid+qm2+2) zeroD
     let (high, carry, ind) =
         if ltid == 0
         then (0, 0, offset)
@@ -62,9 +72,7 @@ def from4Reg2ShmQ_bad [IPB][N][Q]
     let Hacc = write Hacc (ind+1) carry
     in  Hacc
   let Hsh = opaque <| scatter_stream Hsh fH (iota (IPB*N))
-  let Hreg= cpShm2Reg Hsh
   --
-  let Lsh = Hsh
   let fL (Lacc: *acc ([(IPB*N)*(2*Q)]D)) (tid: i64) : acc ([(IPB*N)*(2*Q)]D) =
     #[unsafe]
     let instance = tid / N
@@ -76,56 +84,11 @@ def from4Reg2ShmQ_bad [IPB][N][Q]
     let n_m_2ltid = offset + (2*Q)*N - Q*ltid - Q
     in loop Lacc for q < Q do write Lacc (n_m_2ltid + q) (lhcs1[tid,q])
   let Lsh = opaque <| scatter_stream Lsh fL (iota (IPB*N))
-  let Lreg= cpShm2Reg Lsh
-  --
-  in  (Lreg, Hreg)
-
-def from4Reg2ShmQ [IPB][N][Q]
-        (lhcs0: [IPB*N][Q+2]D) 
-        (lhcs1: [IPB*N][Q+2]D)
-      : ([IPB*N][2*Q]D, [IPB*N][2*Q]D) =
-  #[unsafe]
-  let Lsh = replicate ((IPB*N)*(2*Q)) zeroD
-  let Hsh = replicate ((IPB*N)*(2*Q)) zeroD
-  --
-  let fH (Hacc: *acc ([(IPB*N)*(2*Q)]D)) (tid: i64) : acc ([(IPB*N)*(2*Q)]D) =
-    #[unsafe]
-    let instance = tid / N
-    let ltid     = tid % N
-    let offset   = instance * ( N * (Q * 2) )
-    --
-    let twoltid = offset + Q*ltid
-    -- let Hacc = loop Hacc for qm2 < Q-2 do write Hacc (twoltid+qm2+2) zeroD    
-    let Hacc = write Hacc (twoltid+Q)   (lhcs0[tid,Q])
-    let Hacc = write Hacc (twoltid+Q+1) (lhcs0[tid,Q+1])
-    --
-    let n_m_2ltid = offset + (2*Q)*N - Q*ltid - Q
-    -- let Hacc = loop Hacc for qm2 < Q-2 do write Hacc (twoltid+qm2+2) zeroD
-    let (high, carry, ind) =
-        if ltid == 0
-        then (0, 0, offset)
-        else (lhcs1[tid,Q], lhcs1[tid,Q+1], n_m_2ltid + Q) 
-    let Hacc = write Hacc ind high
-    let Hacc = write Hacc (ind+1) carry
-    in  Hacc
-  let Hsh = scatter_stream Hsh fH (iota (IPB*N))
-  --
-  let fL (Lacc: *acc ([(IPB*N)*(2*Q)]D)) (tid: i64) : acc ([(IPB*N)*(2*Q)]D) =
-    #[unsafe]
-    let instance = tid / N
-    let ltid     = tid % N
-    let offset   = instance * ( N * (Q * 2) )
-    --
-    let twoltid = offset + Q*ltid
-    let Lacc = loop Lacc for q < Q do write Lacc (twoltid+q) (lhcs0[tid,q])
-    let n_m_2ltid = offset + (2*Q)*N - Q*ltid - Q
-    in loop Lacc for q < Q do write Lacc (n_m_2ltid + q) (lhcs1[tid,q])
-  let Lsh = scatter_stream Lsh fL (iota (IPB*N))
 
   let Hreg= cpShm2Reg <| opaque <| Hsh
   let Lreg= cpShm2Reg <| opaque <| Lsh
   --
-  in  (Lreg, Hreg)
+  in  (opaque Lreg, opaque Hreg)
 
 --
 --def combine2 (l0:D, h1:D, c2:S) (l1:D, h2:D, c3:S) : Dx4 =
@@ -228,7 +191,9 @@ def bmulRegsQ [IPB][M][Q] (Areg: [IPB*M][2*Q]D) (Breg: [IPB*M][2*Q]D) : [IPB*M][
     #[toregmem(1)] map (wrapperConvQ Q (i32.i64 M) Ash Bsh)
     <| map i32.i64 <| iota (IPB*M)
   --
-  let (Lreg, Hreg) = from4Reg2ShmQ vec_lhcs0 vec_lhcs1
+  let (Lreg, Hreg) = 
+    -- from4Reg2ShmQ vec_lhcs0 vec_lhcs1
+    from4Reg2ShmQ Ash Bsh (copy vec_lhcs0) (copy vec_lhcs1)
   --
   let Rreg = badd0 Lreg Hreg
   in  Rreg
@@ -238,5 +203,5 @@ def bmul [ipb][n][q] (As: [ipb*n][2*q]D) (Bs: [ipb*n][2*q]D) : [ipb*n][2*q]D =
   let Areg = #[glb2reg_only(1)] manifest As
   let Breg = #[glb2reg_only(1)] manifest Bs
   let Rreg = bmulRegsQ Areg Breg
-  in  Rreg
+  in  opaque Rreg
 
