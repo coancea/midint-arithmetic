@@ -466,6 +466,7 @@ void bmulRegsQ( typename Base::uint_t* Ash
  * Assumption: Q evenly divides M
  */
 template<typename Base, uint32_t IPB, uint32_t M, uint32_t Q>
+__launch_bounds__( (IPB*M)/Q, 1024 / ( (IPB*M)/Q) )
 __global__ void bmulKerQ( uint32_t num_instances
                         , typename Base::uint_t* ass
                         , typename Base::uint_t* bss
@@ -476,9 +477,18 @@ __global__ void bmulKerQ( uint32_t num_instances
     const uint32_t M_lft = LIFT_LEN(M, Q);
     const uint32_t shmem_len = IPB*M_lft;
 
+    //__shared__ uint_t Ash[shmem_len];
+    //__shared__ uint_t Bsh[shmem_len];
+
+#if 1
+    extern __shared__ char sh_mem_char_poly[];
+    uint_t* Ash = (uint_t*) sh_mem_char_poly;
+    uint_t* Bsh = Ash + shmem_len;
+#else
     __shared__ uint_t Ash[shmem_len];
     __shared__ uint_t Bsh[shmem_len];
-
+#endif
+    
     uint_t Arg[Q];
     uint_t Brg[Q];
     { // read from global memory
@@ -498,6 +508,7 @@ __global__ void bmulKerQ( uint32_t num_instances
 }
 
 template<typename Base, uint32_t IPB, uint32_t M, uint32_t Q>
+__launch_bounds__( (IPB * M)/Q, 1024 / ( (IPB * M)/Q) )
 __global__ void polyKerQ( uint32_t num_instances
                         , typename Base::uint_t* ass
                         , typename Base::uint_t* bss
@@ -511,14 +522,15 @@ __global__ void polyKerQ( uint32_t num_instances
     const uint32_t M_lft = LIFT_LEN(M, Q);
     const uint32_t shmem_len = IPB*M_lft;
     
-#if 0  
+#if 1
     extern __shared__ char sh_mem_char_poly[];
     uint_t* Ash = (uint_t*) sh_mem_char_poly;
     uint_t* Bsh = Ash + shmem_len;
-#endif
-
+#else
     __shared__ uint_t Ash[shmem_len];
     __shared__ uint_t Bsh[shmem_len];
+#endif
+
     volatile carry_t* carry_shm = (volatile carry_t*)Ash;
     
     uint_t Arg[Q];

@@ -260,20 +260,20 @@ void gpuMultiply( int num_instances
     dim3 block( ipb*m_lft/q, 1, 1 );
     dim3 grid ( (num_instances+ipb-1)/ipb, 1, 1);  // BUG: it might not fit exactly!
    
-#if 0 
+#if 1
     { // maximize the amount of shared memory for the kernel
-        cudaFuncSetAttribute(bmulKer<Base,ipb,m>, cudaFuncAttributeMaxDynamicSharedMemorySize, 65536);
-        cudaFuncSetAttribute(polyKer<Base,ipb,m>, cudaFuncAttributeMaxDynamicSharedMemorySize, 65536);
+        cudaFuncSetAttribute(bmulKerQ<Base,ipb,m,q>, cudaFuncAttributeMaxDynamicSharedMemorySize, 65536);
+        cudaFuncSetAttribute(polyKerQ<Base,ipb,m,q>, cudaFuncAttributeMaxDynamicSharedMemorySize, 65536);
 
-        printf( "Cosmin shmem size: %ld, B: %d, ipb: %d, num-inst: %d, m_lft: %d\n"
-              , ipb*2*m_lft*sizeof(uint_t), ipb*m_lft/q, ipb, num_instances, m_lft);
+//        printf( "Cosmin shmem size: %ld, B: %d, ipb: %d, num-inst: %d, m_lft: %d\n"
+//              , ipb*2*m_lft*sizeof(uint_t), ipb*m_lft/q, ipb, num_instances, m_lft);
     }    
 #endif
-    
+    const uint32_t shmemlen = ipb*2*m_lft*sizeof(uint_t);
     { // 4. dry run
         //bmulKer<Base,ipb,m><<< grid, block, ipb*2*m*sizeof(uint_t) >>>(d_as, d_bs, d_rs);
         //bmulKer<Base,ipb,m><<< grid, block >>>(d_as, d_bs, d_rs);
-        bmulKerQ<Base,ipb,m,q><<< grid, block >>>(num_instances, d_as, d_bs, d_rs);
+        bmulKerQ<Base,ipb,m,q><<< grid, block, shmemlen >>>(num_instances, d_as, d_bs, d_rs);
         cudaDeviceSynchronize();
         gpuAssert( cudaPeekAtLastError() );
     }
@@ -288,7 +288,7 @@ void gpuMultiply( int num_instances
         
         for(int i=0; i<GPU_RUNS_MUL; i++) {
             //bmulKer<Base,ipb,m><<< grid, block >>>(d_as, d_bs, d_rs);
-            bmulKerQ<Base,ipb,m,q><<< grid, block >>>(num_instances, d_as, d_bs, d_rs);
+            bmulKerQ<Base,ipb,m,q><<< grid, block, shmemlen >>>(num_instances, d_as, d_bs, d_rs);
         }
         
         cudaDeviceSynchronize();
@@ -317,7 +317,7 @@ void gpuMultiply( int num_instances
     if(1)
     { // 5. timing instrumentation for Polynomial Computation
         // dry run    
-        polyKerQ<Base,ipb,m,q><<< grid, block >>>(num_instances, d_as, d_bs, d_rs);
+        polyKerQ<Base,ipb,m,q><<< grid, block, shmemlen >>>(num_instances, d_as, d_bs, d_rs);
 
         cudaDeviceSynchronize();
         gpuAssert( cudaPeekAtLastError() );
@@ -328,7 +328,7 @@ void gpuMultiply( int num_instances
         gettimeofday(&t_start, NULL); 
         
         for(int i=0; i<GPU_RUNS_MUL; i++) {
-            polyKerQ<Base,ipb,m,q><<< grid, block >>>(num_instances, d_as, d_bs, d_rs);
+            polyKerQ<Base,ipb,m,q><<< grid, block, shmemlen >>>(num_instances, d_as, d_bs, d_rs);
         }
         
         cudaDeviceSynchronize();
@@ -664,6 +664,7 @@ void runAdditions(uint64_t total_work) {
     mkRandArrays<32,32>( total_work/32, &h_as, &h_bs, &h_rs_gmp, &h_rs_our );
     
 #if 1
+    testAddition<Base, 8192>( total_work/8192, h_as, h_bs, h_rs_gmp, h_rs_our, WITH_VALIDATION );
     testAddition<Base, 4096>( total_work/4096, h_as, h_bs, h_rs_gmp, h_rs_our, WITH_VALIDATION );
     testAddition<Base, 2048>( total_work/2048, h_as, h_bs, h_rs_gmp, h_rs_our, WITH_VALIDATION );
     testAddition<Base, 1024>( total_work/1024, h_as, h_bs, h_rs_gmp, h_rs_our, WITH_VALIDATION );
@@ -688,8 +689,10 @@ void runNaiveMuls(uint64_t total_work) {
 
 //    testNsqMul<Base, 512*3>( total_work/(512*3), h_as, h_bs, h_rs_gmp, h_rs_our, WITH_VALIDATION );
 
-//    testNsqMul<Base, 2048>( total_work/(2048), h_as, h_bs, h_rs_gmp, h_rs_our, WITH_VALIDATION ); 
+//    testNsqMul<Base, 2048>( total_work/(2048), h_as, h_bs, h_rs_gmp, h_rs_our, WITH_VALIDATION );
+
 #if 1
+    testNsqMul<Base, 8192>( total_work/8192, h_as, h_bs, h_rs_gmp, h_rs_our, WITH_VALIDATION );
     testNsqMul<Base, 4096>( total_work/4096, h_as, h_bs, h_rs_gmp, h_rs_our, WITH_VALIDATION );
     testNsqMul<Base, 2048>( total_work/2048, h_as, h_bs, h_rs_gmp, h_rs_our, WITH_VALIDATION );
 
@@ -754,7 +757,7 @@ int main (int argc, char * argv[]) {
         
     const int total_work = atoi(argv[1]);
 
-    cudaSetDevice(1);
+    cudaSetDevice(0);
     //testBasicOps<uint32_t> ( 1000000, 100 );
     //testBasicOps<uint64_t> ( 1000000, 100 );
 
