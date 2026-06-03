@@ -71,7 +71,7 @@ def from4Reg2ShmQ [IPB][N][Q]
     let Hacc = write Hacc ind high
     let Hacc = write Hacc (ind+1) carry
     in  Hacc
-  let Hsh = opaque <| scatter_stream Hsh fH (iota (IPB*N))
+  let Hsh = scatter_stream Hsh fH (iota (IPB*N))
   --
   let fL (Lacc: *acc ([(IPB*N)*(2*Q)]D)) (tid: i64) : acc ([(IPB*N)*(2*Q)]D) =
     #[unsafe]
@@ -85,10 +85,10 @@ def from4Reg2ShmQ [IPB][N][Q]
     in loop Lacc for q < Q do write Lacc (n_m_2ltid + q) (lhcs1[tid,q])
   let Lsh = opaque <| scatter_stream Lsh fL (iota (IPB*N))
 
-  let Hreg= cpShm2Reg <| opaque <| Hsh
-  let Lreg= cpShm2Reg <| opaque <| Lsh
+  let Hreg= cpShm2Reg Hsh
+  let Lreg= cpShm2Reg Lsh
   --
-  in  (opaque Lreg, opaque Hreg)
+  in  (Lreg, Hreg)
 
 --
 --def combine2 (l0:D, h1:D, c2:S) (l1:D, h2:D, c3:S) : Dx4 =
