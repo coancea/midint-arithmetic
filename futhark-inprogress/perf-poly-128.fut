@@ -1,4 +1,4 @@
-import "poly"
+import "poly-uf"
 
 -- ==
 -- entry: poly128
