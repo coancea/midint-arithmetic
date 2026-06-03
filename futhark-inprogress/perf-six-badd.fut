@@ -12,16 +12,6 @@ def sixAdd [n][ipb][m][q] (ass: [n][ipb*m][q]u64) (bss: [n][ipb*m][q]u64) : [n][
 
 --
 -- ==
--- entry: sixAdds4096Q8
--- compiled random input { [16384][512][8]u64  [16384][512][8]u64 }
-entry sixAdds4096Q8 [m] (ass0: [m][512][8]u64) (bss0: [m][512][8]u64) : [m][1*512][8]u64 =
-  #[unsafe]
-  let ass = ass0 :> [m][1*512][8]u64
-  let bss = bss0 :> [m][1*512][8]u64
-  in  sixAdd ass bss
-
---
--- ==
 -- entry: sixAdds4096
 -- compiled random input { [16384][1024][4]u64  [16384][1024][4]u64 } 
 entry sixAdds4096 [m] (ass0: [m][1024][4]u64) (bss0: [m][1024][4]u64) : [m][1*1024][4]u64 = 
@@ -29,15 +19,6 @@ entry sixAdds4096 [m] (ass0: [m][1024][4]u64) (bss0: [m][1024][4]u64) : [m][1*10
   let ass = ass0 :> [m][1*1024][4]u64
   let bss = bss0 :> [m][1*1024][4]u64
   in  sixAdd ass bss
-
--- ==
--- entry: sixAdds2048Q8
--- compiled random input { [32768][256][8]u64  [32768][256][8]u64 } auto output
-entry sixAdds2048Q8 [m] (ass0: [m][256][8]u64) (bss0: [m][256][8]u64) : [m][1*256][8]u64 = 
-   #[unsafe]
-   let ass = ass0 :> [m][(1*256)][8]u64
-   let bss = bss0 :> [m][(1*256)][8]u64
-   in  sixAdd ass bss
 
 -- ==
 -- entry: sixAdds2048
