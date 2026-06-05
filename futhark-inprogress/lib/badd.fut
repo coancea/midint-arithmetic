@@ -1,4 +1,35 @@
+import "../intrinsics-accs"
 import "types"
+
+-------------------------
+--- Specialized cases ---
+-------------------------
+
+def baddOne [m][q] (xss: [m][q]uint) : [m][q]uint =
+  #[unsafe]
+  let shm = replicate 1 i32.highest
+  let ffacc (myacc: *acc ([1]i32)) (tid: i64) : acc ([1]i32) =
+      let ind =
+        loop ind = i32.highest for i < q do
+          let rev_i = q - i - 1
+          in  if xss[tid, rev_i] != uint_highest
+              then i32.i64 (q * tid + rev_i) else ind
+      in write myacc 0 ind
+  --
+  let shm = opaque <|
+    reduce_by_index_stream shm (i32.min) i32.highest ffacc (iota m)
+  --
+  let min_index = shm[0]
+  --
+  let ffin tid x i =
+      let idx = i32.i64 (q * tid + i) in
+      if idx < min_index then 0
+      else if idx == min_index
+           then x + 1
+           else x
+  let ffout xs tid =
+      #[sequential]map2 (ffin tid) xs (iota q)
+  in  opaque <| #[toregmem(1)] map2 ffout xss (iota m)
 
 ------------------------------------------------------------------------
 ---- prefix sum (scan) operator to propagate the carry

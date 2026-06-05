@@ -1,36 +1,8 @@
 import "../intrinsics-accs"
 import "types"
 import "badd"
+import "utils"
 
----------------------------------------------------------------
---- Utilities
----------------------------------------------------------------
-
-def cpShm2Reg [M][Q] 't (Ash: [M*Q]t) : *[M][Q]t =
-  #[unsafe]
-  let ff tid = #[sequential] map (\q -> Ash[tid*Q + q]) (iota Q)
-  in  opaque <| #[toregmem(1)] map ff (iota M)
-
-def cpShm2RegPad [M][Q] 't (m: i64) (pad: t) (Ash: [M*Q]t) : *[M][Q]t =
-  #[unsafe]
-  let f tid j = let ind = tid*Q + j in if ind < m then Ash[ind] else pad
-  let ff tid = #[sequential] map (f tid) (iota Q)
-  in  opaque <| #[toregmem(1)] map ff (iota M)
-
-def cpReg2Shm [M][Q] 't (Areg: [M][Q]t) : *[M*Q]t =
-  #[unsafe]
-  let Ash = #[scratch] replicate (M*Q) Areg[0,0]
-  let f (Aacc: *acc ([M*Q]t)) (tid: i64) : acc ([M*Q]t) =
-    loop Aacc for q < Q do
-      write Aacc (tid*Q + q) (Areg[tid][q])
-  in scatter_stream Ash f (iota M)
-
-def cpReg2ShmNoAcc [M][Q] (Areg: [M][Q]uint) : *[M*Q]uint =
-  #[unsafe]
-  let f (row : [Q]uint) =
-    loop res = #[scratch] replicate Q (row[0]) for q < Q do
-      let res[q] = row[q] in res
-  in flatten (map f Areg)
 
 def from4Reg2ShmQ_OLD [IPB][N][Q]
         (Lsh:   *[(IPB*N)*(2*Q)]uint)

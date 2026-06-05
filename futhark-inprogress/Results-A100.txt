@@ -75,61 +75,59 @@ perf-one-badd.fut:oneAdd64 (no tuning file):
 =========== six adds ==========
 ===============================
 
+Both Q4 and Q8 correspond to THE NEW BADD in lib/perf
+
 WITH Q=8
-[xmf768@hendrixfut03fl futhark-inprogress]$ futhark bench --backend=cuda perf-six-badd-Q8.fut
+
+[xmf768@hendrixfut03fl perf]$ futhark bench --backend=cuda --pass-option=--device="#1" perf-six-badd-Q8.fut 
 Compiling perf-six-badd-Q8.fut...
 Reporting arithmetic mean runtime of at least 10 runs for each dataset (min 0.5s).
 More runs automatically performed for up to 300s to ensure accurate measurement.
 
 perf-six-badd-Q8.fut:sixAdds4096 (no tuning file):
-[16384][512][8]u64 [16384][512][8]u64:       3163μs (95% CI: [    3161.9,     3166.5])
+[16384][512][8]u64 [16384][512][8]u64:       2920μs (95% CI: [    2919.2,     2923.8])
 
 perf-six-badd-Q8.fut:sixAdds2048 (no tuning file):
-[32768][256][8]u64 [32768][256][8]u64:       2730μs (95% CI: [    2728.0,     2733.7])
+[32768][256][8]u64 [32768][256][8]u64:       2487μs (95% CI: [    2486.5,     2487.2])
 
 perf-six-badd-Q8.fut:sixAdds1024 (no tuning file):
-[65536][128][8]u64 [65536][128][8]u64:       2386μs (95% CI: [    2383.4,     2388.9])
+[65536][128][8]u64 [65536][128][8]u64:       2323μs (95% CI: [    2322.7,     2323.4])
 
 perf-six-badd-Q8.fut:sixAdds512 (no tuning file):
-[131072][64][8]u64 [131072][64][8]u64:       2372μs (95% CI: [    2369.3,     2375.2])
+[131072][64][8]u64 [131072][64][8]u64:       2285μs (95% CI: [    2282.3,     2286.5])
 
 perf-six-badd-Q8.fut:sixAdds256 (no tuning file):
-[131072][64][8]u64 [131072][64][8]u64:       2381μs (95% CI: [    2378.3,     2383.3])
+[131072][64][8]u64 [131072][64][8]u64:       2289μs (95% CI: [    2286.7,     2291.7])
 
 perf-six-badd-Q8.fut:sixAdds128 (no tuning file):
-[131072][64][8]u64 [131072][64][8]u64:       2376μs (95% CI: [    2373.2,     2378.4])
+[131072][64][8]u64 [131072][64][8]u64:       2285μs (95% CI: [    2282.9,     2287.6])
 
 perf-six-badd-Q8.fut:sixAdds64 (no tuning file):
-[131072][64][8]u64 [131072][64][8]u64:       2369μs (95% CI: [    2366.3,     2371.1])
+[131072][64][8]u64 [131072][64][8]u64:       2264μs (95% CI: [    2262.2,     2266.4])
 
 ===
 
 WITH Q=4
-[xmf768@hendrixfut03fl futhark-inprogress]$ futhark bench --backend=cuda perf-six-badd.fut
-Compiling perf-six-badd.fut...
-Reporting arithmetic mean runtime of at least 10 runs for each dataset (min 0.5s).
-More runs automatically performed for up to 300s to ensure accurate measurement.
-
 perf-six-badd.fut:sixAdds4096 (no tuning file):
-[16384][1024][4]u64 [16384][1024][4]u64:       3704μs (95% CI: [    3703.0,     3707.5])
+[16384][1024][4]u64 [16384][1024][4]u64:       3504μs (95% CI: [    3501.5,     3505.1])
 
 perf-six-badd.fut:sixAdds2048 (no tuning file):
-[32768][512][4]u64 [32768][512][4]u64:         4527μs (95% CI: [    4525.8,     4527.7])
+[32768][512][4]u64 [32768][512][4]u64:         4314μs (95% CI: [    4313.3,     4314.6])
 
 perf-six-badd.fut:sixAdds1024 (no tuning file):
-[65536][256][4]u64 [65536][256][4]u64:         3180μs (95% CI: [    3180.1,     3180.9])
+[65536][256][4]u64 [65536][256][4]u64:         2974μs (95% CI: [    2972.9,     2975.4])
 
 perf-six-badd.fut:sixAdds512 (no tuning file):
-[131072][128][4]u64 [131072][128][4]u64:       2995μs (95% CI: [    2990.9,     2999.2])
+[131072][128][4]u64 [131072][128][4]u64:       2776μs (95% CI: [    2774.6,     2777.4])
 
 perf-six-badd.fut:sixAdds256 (no tuning file):
-[262144][64][4]u64 [262144][64][4]u64:         3012μs (95% CI: [    3008.4,     3014.6])
+[262144][64][4]u64 [262144][64][4]u64:         2762μs (95% CI: [    2758.2,     2764.4])
 
 perf-six-badd.fut:sixAdds128 (no tuning file):
-[262144][64][4]u64 [262144][64][4]u64:         3012μs (95% CI: [    3007.8,     3014.4])
+[262144][64][4]u64 [262144][64][4]u64:         2757μs (95% CI: [    2753.9,     2759.3])
 
 perf-six-badd.fut:sixAdds64 (no tuning file):
-[262144][64][4]u64 [262144][64][4]u64:         3012μs (95% CI: [    3008.6,     3015.3])
+[262144][64][4]u64 [262144][64][4]u64:         2762μs (95% CI: [    2757.6,     2765.5])
 
 ---------------------------
 --- BMUL CUDA PROTOTYPE ---
