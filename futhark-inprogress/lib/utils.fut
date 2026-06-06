@@ -105,6 +105,17 @@ def getIndFromRegArr [m][q] (ind: i32) (arr: [m][q]uint) : uint =
   let tmpshm = opaque <| scatter_stream tmpshm fLacc (iota m)
   in tmpshm[0]
 
+def digitEqVal [m][q] (ind: i32) (v: uint) (arr: [m][q]uint) : bool =
+  let tmpshm = replicate 1 false
+  let fLacc (tmpacc: *acc ([1]bool)) (tid: i64) : acc ([1]bool) =
+      loop tmpacc for j < q do
+        if ind == i32.i64 (tid * q + j) && (arr[tid,j] == v)
+        then write tmpacc 0 true
+        else tmpacc
+  let tmpshm = opaque <| scatter_stream tmpshm fLacc (iota m)
+  in tmpshm[0]
+
+
 def bsubReg' [n][q] (areg : [n][q]uint) (breg : [n][q]uint) : [n][q]uint =
   #[unsafe]
   let res = bsubReg (areg :> [1*n][q]uint) (breg :> [1*n][q]uint)
