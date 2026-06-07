@@ -12,7 +12,7 @@ def baddOne [m][q] (xss: [m][q]uint) : [m][q]uint =
       let ind =
         loop ind = i32.highest for i < q do
           let rev_i = q - i - 1
-          in  if xss[tid, rev_i] != uint_highest
+          in  if xss[tid, rev_i] != highest_uint
               then i32.i64 (q * tid + rev_i) else ind
       in write myacc 0 ind
   --
@@ -61,7 +61,7 @@ let baddReg [ipb][n][q] (aregs : [ipb*n][q]uint) (bregs : [ipb*n][q]uint) : [ipb
           let (a, b) = (areg[i], breg[i])
           let r = a + b
           let c = cTfromBool (r < a)
-          let c = c | ( (cTfromBool (r == uint_highest)) << 1 )
+          let c = c | ( (cTfromBool (r == highest_uint)) << 1 )
           let c = c | ( (cTfromBool (i == 0 && is_seg_start)) << 2 )
           let rs[i] = r
           let cs[i] = c         

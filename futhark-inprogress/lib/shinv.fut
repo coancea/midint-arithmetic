@@ -69,16 +69,24 @@ def step [m][q] (h: i32) (mm: i32) (l: i32) (vs: [m][2*q]uint) (ws: [m][2*q]uint
        let ys_sft'= if isZero then ys_sft else baddOne ys_sft
        in  bsubReg' ws_sft ys_sft'
 
-def refine3 [m][q] (h: i32) (k: i32) (l: i32) (vs: [m][q]uint) (ws: [m][q]uint) : [m][q]uint =
+def refine3 [m][q] (h: i32) (k: i32) (l: i32) (vs: [m][2*q]uint) (w_high : uint, w_low: uint) : [m][2*q]uint =
   #[unsafe]
-  let mkLoopCount (h: i32) (k: i32) : i32 =
-      let nf = f32.ceil <| f32.log2 <| h - k - 1
-      in  2 + i32.max 0 (i32.f32 nf)
-  --
   let g = 2i32
-  let ws = shift g ws
+  let ws = opaque <| 
+    imapReg (iota m)
+      (\tid -> #[sequential] imap (iota (2*q))
+        (\ j -> let idx = i32.i64 (tid*q+j) in
+                if idx == 2 then w_low
+                else if idx == 3 then w_high
+                else zero_uint
+      ) )
+  --
+  let mkLoopCount (h: i32) (k: i32) : i32 =
+      let nf = f32.ceil <| f32.log2 <| f32.i32 <| h - k - 1
+      in  2 + i32.max 0 (i32.f32 nf)
   let n = mkLoopCount h k
-  let ws' =
+  --
+  let (_, ws') =
     loop (l, ws) for i < n do
       let mm = i32.min l (h - k + 1 - l)
       let s  = i32.max 0 (k - 2*l + 1 - g)
@@ -92,26 +100,22 @@ def refine3 [m][q] (h: i32) (k: i32) (l: i32) (vs: [m][q]uint) (ws: [m][q]uint) 
   let qq = if h - k < 2 then h - k - 4 else -2
   in  shift qq ws'
 
-B^{k-1} <= v < B^{k} => prec vs = k
-if v < B then return B^h quo v ▷ Divide by 1 digit
-if v > B^h then return 0       ▷ get digit h   (precision h+1)
-if 2v > B^h then return 1      ▷ get digit h-1 (precision h)  -- case B^h >= v > B^h / 2
-if v = B^{k} then return B^{h-k} ▷ get digit k-1 (precision k+1)
-
-def shinv [m][q] (vs: [m][q]uint) (h: i32) : [m][q]uint =
+def shinv [m][q] (vs: [m][2*q]uint) (h: i32) : [m][2*q]uint =
   -- ASSUMES uint has bit size >= 16, i.e., u8 is not supported
-  let k = (prec vs) - 1
+  let k = (prec vs) - 1 in
   --
-  let (is_special, res) =
-    if k == 0 then (true, quoPowB m q h (getIndFromRegArr 0 vs))  -- vs < B    => B^h quo v (one digit div)
-    else if k > h || (k == h && one_uint < getIndFromRegArr h vs) -- vs > B^h  => zero
-         then (true, zero m q)
-    else if k == h || (k == h-1 && highest_uint / 2 < getIndFromRegArr (h-1) vs) -- B^h >= vs > B^h / 2 => 1
-         then (true, one m q)
-    else if v == B^k then (true, B^{h-k})
-    else (false, zero m q)
-  
-  if is_special then res else
-  -- general treatment
-  ... to be continued ...
+  if k == 0 -- vs < B => B^h quo v (one digit div)
+     then quoPowB m (2*q) h (getIndFromRegArr 0 vs)  
+  else if gtBpowMul (k+1) vs one_uint h               -- vs > 1*B^h  => 0
+     then bigZero m (2*q)
+  else if gtBpowMul (k+1) vs (highest_uint / 2) (h-1) -- vs > (B/2) * B^{h-1} => 1
+     then bigOne m (2*q)
+  else if eqBpowMul (k+1) vs one_uint k               -- v == B^k => B^{h-k}
+     then mkPowBMul m (2*q) one_uint (h-k)
+  else
+    -- general treatment
+    let v_low = getIndFromRegArr (k-1) vs
+    let v_high= getIndFromRegArr k vs
+    let (w_high, w_low) = BcubeQuoV v_low v_high
+    in  refine3 h k 2 vs (w_high, w_low)
 

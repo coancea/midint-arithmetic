@@ -75,7 +75,7 @@ def nullUpToInd [m][q] (ind: i32) (xss: [m][q]uint) : bool =
         then false else thd_res
     in if thd_res then resacc else write resacc 0 false
   let resshm = opaque <| scatter_stream resshm ffacc (iota m)
-  in resshm[0]
+  in resshm[0]  
 
 def null [m][q] (vss: [m][q]uint) : bool =
   nullUpToInd (i32.i64 (m*q)) vss
@@ -141,4 +141,99 @@ def shift [m][q] (n: i32) (xss: [m][q]uint) : [m][q]uint =
   let shm = opaque <| scatter_stream shm ffacc (iota m)
   --
   in  cpShm2Reg shm
+
+
+-- | Answers whether xs > a*B^n
+--   Assumes that `a > 0` and that `prec` is the precision of `xs`
+-- ToDo: optimize such that each thread performs one write to shm.
+def gtBpowMul [m][q] (prec: i32) (xs: [m][q]uint) (a: uint) (n: i32) : bool =
+  #[unsafe]
+  if prec > n+1 then true
+  else if prec <= n then false
+  else 
+    let shm = replicate 3 0i32
+    let ffacc (shmacc: *acc ([3]i32)) (tid: i64) : acc ([3]i32) =
+      let (t0, t1, t2) =
+        loop (t0,t1,t2)=(false,false,false)
+        for i < q do
+          let idx = i32.i64 (q * tid + i) in
+          let v = xs[tid,i] in
+          if v == zero_uint then (t0, t1, t2)
+          else if idx < n
+               then (true, t1,t2)
+          else if idx == n && v == a
+               then (t0, true, t2)
+          else if idx == n && v > a
+               then (t0, t1, true)
+          else (t0, t1, t2)
+      let shmacc = if t0 then write shmacc 0 1 else shmacc
+      let shmacc = if t1 then write shmacc 1 1 else shmacc
+      let shmacc = if t2 then write shmacc 2 1 else shmacc
+      in  shmacc      
+    let shm = opaque <| scatter_stream shm ffacc (iota m)
+    in  if shm[2] > 0 then true
+        else if shm[1] > 0 && shm[0] > 0 then true
+        else false
+
+-- | Answers: `a * B^{n} == xs`
+--   Assumes `a > 0` and that `prec` is the precision of xs
+-- ToDo: optimize such that each thread performs one write to shm
+def eqBpowMul [m][q] (prec: i32) (xs: [m][q]uint) (a: uint) (n: i32) : bool =
+  #[unsafe]
+  if prec < n+1 || prec > n+1 then false
+  else 
+  let shm = replicate 3 1i32
+  let ffacc (shmacc: *acc ([3]i32)) (tid: i64) : acc ([3]i32) =
+      let t0 =
+        loop t0 = true for j < q do
+          let v = xs[tid,j]
+          let idx = i32.i64 (q * tid + j) in
+          if (idx < n && v != 0) || (idx == n && v != a)
+          then false else t0
+      in  if !t0 then write shmacc 0 0 else shmacc
+  let shm = opaque <| scatter_stream shm ffacc (iota m)
+  in  shm[0] > 0
+
+def bigZero (m: i64) (q: i64) : [m][q]uint = #[unsafe]
+   imapReg (iota m)
+     (\ _ -> #[sequential] replicate q zero_uint )
+
+def bigOne (m: i64) (q: i64) : [m][q]uint = #[unsafe]
+   imapReg (iota m)
+     (\ i -> let z = #[sequential] replicate q zero_uint
+             in if i != 0 then z
+                else let z[0] = 1 in z                
+     )
+
+-- results in ` a * B^h `
+def mkPowBMul (m: i64) (q: i64) (a: uint) (h: i32) : [m][q]uint =
+  #[unsafe]
+  let f i =
+      let z = #[sequential] replicate q zero_uint
+      let lb = i*q
+      in  if i >= lb+q || i < lb then z
+          else let z[h - i32.i64 lb] = a in z
+  in  opaque <| #[toregmem(1)] map f (iota m)
+
+-- computes ` B^h quo d `, i.e., one digit division from a power of B
+def quoPowB (m: i64) (q: i64) (h: i32) (d: uint) : [m][q]uint =
+  if d == one_uint then mkPowBMul m q one_uint h
+  else
+    let shm = replicate (m*q) zero_uint
+    let ffacc (shmacc: *acc ([m*q]uint)) (tid: i64) : acc ([m*q]uint) =
+      if tid > 0 then shmacc else
+      -- tid == 0 does all the computation:
+      let r : uint128_t = { high = 0u64, low = 1u64 } in
+      (loop (shmacc, r) for i_rev < h do
+        let i = h - 1 - i_rev
+        -- r = r << Base::bits
+        let r : uint128_t = { high = r.low, low = 0u64 } -- r with high = r.low, low = 0u64
+        in  if r.high > 0 || r.low >= d
+            then let d128 : uint128_t = { high = 0u64, low = d } 
+                 let (q, r) = divmod128 r d128
+                 in  (write shmacc (i64.i32 i) q.low, r)
+            else (shmacc, r)
+      ).0
+    let shm = opaque <| scatter_stream shm ffacc (iota m)
+    in  cpShm2Reg shm
 
