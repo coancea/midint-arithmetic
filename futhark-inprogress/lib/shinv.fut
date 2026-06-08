@@ -71,11 +71,10 @@ def step [m][q] (h: i32) (mm: i32) (l: i32) (vs: [m][2*q]uint) (ws: [m][2*q]uint
 
 def refine3 [m][q] (h: i32) (k: i32) (l: i32) (vs: [m][2*q]uint) (w_high : uint, w_low: uint) : [m][2*q]uint =
   #[unsafe]
-  let g = 2i32
   let ws = opaque <| 
     imapReg (iota m)
       (\tid -> #[sequential] imap (iota (2*q))
-        (\ j -> let idx = i32.i64 (tid*q+j) in
+        (\ j -> let idx = i32.i64 (tid*(2*q) + j) in
                 if idx == 2 then w_low
                 else if idx == 3 then w_high
                 else zero_uint
@@ -85,6 +84,8 @@ def refine3 [m][q] (h: i32) (k: i32) (l: i32) (vs: [m][2*q]uint) (w_high : uint,
       let nf = f32.ceil <| f32.log2 <| f32.i32 <| h - k - 1
       in  2 + i32.max 0 (i32.f32 nf)
   let n = mkLoopCount h k
+  --
+  let g = 2i32
   --
   let (_, ws') =
     loop (l, ws) for i < n do

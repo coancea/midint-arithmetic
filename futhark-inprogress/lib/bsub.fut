@@ -6,6 +6,35 @@ import "badd"
 ----   very similar to how addition is done!
 ------------------------------------------------
 
+-- | Specialized case for subtraction: `B^h - as`
+--   Assumes B^h >= as
+def bsubFromBpowReg [m][q] (h: i32) (xs: [m][q]uint) : [m][q]uint =
+  #[unsafe]
+  let shm = replicate 1 i32.highest
+  let ffacc (myacc: *acc ([1]i32)) (tid: i64) : acc ([1]i32) =
+      let ind =
+        loop ind = i32.highest for i < q do
+          let rev_i = q - i - 1
+          in  if xs[tid, rev_i] != 0
+              then i32.i64 (q * tid + rev_i) else ind
+      in write myacc 0 ind
+  --
+  let shm = opaque <|
+    reduce_by_index_stream shm (i32.min) i32.highest ffacc (iota m)
+  --
+  let min_index = shm[0]
+  --
+  let ffin tid x i =
+      let idx = i32.i64 (q * tid + i) in
+      if idx < min_index then zero_uint
+      else if idx < h
+           then (highest_uint - x) + uint_bool (idx == min_index)
+           else x
+  let ffout xs tid =
+      #[sequential]map2 (ffin tid) xs (iota q)
+   in  opaque <| #[toregmem(1)] map2 ffout xss (iota m)
+
+
 let bsubReg [ipb][n][q] (aregs : [ipb*n][q]uint) (bregs : [ipb*n][q]uint) : [ipb*n][q]uint =
   #[unsafe]
   let ff1 tid =

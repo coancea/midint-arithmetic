@@ -46,7 +46,7 @@ def bmul1 [m][q] (msz: i64)
       in  write Hacc (tid+m) (uint_c carries[tid,0])
   let Hsh = opaque <| scatter_stream Bsh fHacc (iota m)
   --
-  -- now load to 4 registers and form the lhcs vectors
+  -- now load to 2*q registers and form the lhcs vectors
   let fm2 tid =
       #[unsafe]
       let ind  = 2*tid

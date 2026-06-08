@@ -63,6 +63,7 @@ def zeroAndSet (d : uint) (idx : i32) (m : i64) (q: i64) : [m][q]uint =
              in  rs
     )
 
+-- | Answers: B^b > uss
 def ltBpow [m][q] (uss: [m][q]u64) (b: i32) : bool =
   prec uss <= b
 
