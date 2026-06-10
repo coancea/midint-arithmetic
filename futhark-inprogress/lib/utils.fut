@@ -11,26 +11,26 @@ def imap2Reg as bs f = #[toregmem(1)] map2 f as bs
 -------------------------------------
 
 def cpShm2Reg [M][Q] 't (Ash: [M*Q]t) : *[M][Q]t =
-  #[unsafe]
+--  #[unsafe]
   let ff tid = #[sequential] map (\q -> Ash[tid*Q + q]) (iota Q)
   in  opaque <| #[toregmem(1)] map ff (iota M)
 
 def cpShm2RegPad [M][Q] 't (m: i64) (pad: t) (Ash: [M*Q]t) : *[M][Q]t =
-  #[unsafe]
+--  #[unsafe]
   let f tid j = let ind = tid*Q + j in if ind < m then Ash[ind] else pad
   let ff tid = #[sequential] map (f tid) (iota Q)
   in  opaque <| #[toregmem(1)] map ff (iota M)
 
 def cpReg2Shm [M][Q] 't (Areg: [M][Q]t) : *[M*Q]t =
-  #[unsafe]
+--  #[unsafe]
   let Ash = #[scratch] replicate (M*Q) Areg[0,0]
   let f (Aacc: *acc ([M*Q]t)) (tid: i64) : acc ([M*Q]t) =
     loop Aacc for q < Q do
-      write Aacc (tid*Q + q) (Areg[tid][q])
-  in scatter_stream Ash f (iota M)
+      write Aacc (tid*Q + q) (Areg[tid, q])
+  in opaque <| scatter_stream Ash f (iota M)
 
 def cpReg2ShmNoAcc [M][Q] (Areg: [M][Q]uint) : *[M*Q]uint =
-  #[unsafe]
+--  #[unsafe]
   let f (row : [Q]uint) =
     loop res = #[scratch] replicate Q (row[0]) for q < Q do
       let res[q] = row[q] in res
@@ -40,8 +40,8 @@ def cpReg2ShmNoAcc [M][Q] (Areg: [M][Q]uint) : *[M*Q]uint =
 --- Helper functions for division
 -----------------------------------------
 
-def prec [m][q] (vss : [m][q]uint) : i32 =
-  #[unsafe]
+def precRed [m][q] (vss : [m][q]uint) : i32 =
+--  #[unsafe]
   let ff i vs =
       loop p = 0i16 for j < q do
         if vs[j] == zero_uint
@@ -50,9 +50,40 @@ def prec [m][q] (vss : [m][q]uint) : i32 =
   let hs = opaque <| map2 ff (iota m) vss
   in i32.i16 <| reduce_comm i16.max 0 hs -- can be replaced by hist
 
+def prec [m][q] (vss : [m][q]uint) : i32 =
+--  #[unsafe]
+  let shm = replicate 1 0i32
+  let ffacc (myacc: *acc ([1]i32)) (tid: i64) : acc ([1]i32) =
+      let ind =
+        loop ind = 0i32 for i < q do
+          if vss[tid, i] != zero_uint
+          then i32.i64 (q * tid + i + 1) else ind
+      in if ind > 0 then write myacc 0 ind else myacc
+  --
+  let shm = opaque <|
+    reduce_by_index_stream shm (i32.max) 0i32 ffacc (iota m)
+  in  shm[0]
+
+def maxGtInd [m][q] (xss : [m][q]uint) (yss : [m][q]uint) : i32 =
+  let shm = replicate 1 0i32
+  let ffacc (myacc: *acc ([1]i32)) (tid: i64) : acc ([1]i32) =
+      let ind =
+        loop ind = 0i32 for i < q do
+          if xss[tid, i] > yss[tid, i]
+          then i32.i64 (q * tid + i + 1) else ind
+      in if ind > 0 then write myacc 0 ind else myacc
+  --
+  let shm = opaque <|
+    reduce_by_index_stream shm (i32.max) 0i32 ffacc (iota m)
+  let max_index = shm[0]
+  in  max_index
+
+def gt [m][q] (xss : [m][q]uint) (yss : [m][q]uint) : bool =
+  maxGtInd xss yss > maxGtInd yss xss
+
 -- zero bigint array and set given index to d
 def zeroAndSet (d : uint) (idx : i32) (m : i64) (q: i64) : [m][q]uint = 
-  #[unsafe]
+--  #[unsafe]
   opaque <|
   imapReg (iota m)
     (\i -> let rs = #[scratch] replicate q zero_uint in
@@ -80,13 +111,9 @@ def nullUpToInd [m][q] (ind: i32) (xss: [m][q]uint) : bool =
 
 def null [m][q] (vss: [m][q]uint) : bool =
   nullUpToInd (i32.i64 (m*q)) vss
---  let ff vs = loop b = false for j < q do
---                if vs[j] != zero_uint then true else b
---  let hs = opaque <| map ff vss
---  in  ! (reduce_comm (||) false hs) -- can be replaced by hist
 
 def modPow [m][q] (L: i32) (vss: [m][q]uint) : [m][q]uint =
-  #[unsafe]
+--  #[unsafe]
   opaque <|
   imap2Reg (iota m) vss
     (\ i vs ->
@@ -118,17 +145,17 @@ def digitEqVal [m][q] (ind: i32) (v: uint) (arr: [m][q]uint) : bool =
 
 
 def bsubReg' [n][q] (areg : [n][q]uint) (breg : [n][q]uint) : [n][q]uint =
-  #[unsafe]
+--  #[unsafe]
   let res = bsubReg (areg :> [1*n][q]uint) (breg :> [1*n][q]uint)
   in  res :> [n][q]uint
 
 def baddReg' [n][q] (areg : [n][q]uint) (breg : [n][q]uint) : [n][q]uint =
-  #[unsafe]
+--  #[unsafe]
   let res = baddReg (areg :> [1*n][q]uint) (breg :> [1*n][q]uint)
   in  res :> [n][q]uint
 
 def shift [m][q] (n: i32) (xss: [m][q]uint) : [m][q]uint =
-  #[unsafe]
+--  #[unsafe]
   let shm = replicate (m*q) zero_uint
   let ffacc (tmpacc: *acc ([m*q]uint)) (tid: i64) : acc ([m*q]uint) =
       loop tmpacc for i < q do
@@ -148,7 +175,7 @@ def shift [m][q] (n: i32) (xss: [m][q]uint) : [m][q]uint =
 --   Assumes that `a > 0` and that `prec` is the precision of `xs`
 -- ToDo: optimize such that each thread performs one write to shm.
 def gtBpowMul [m][q] (prec: i32) (xs: [m][q]uint) (a: uint) (n: i32) : bool =
-  #[unsafe]
+--  #[unsafe]
   if prec > n+1 then true
   else if prec <= n then false
   else 
@@ -180,7 +207,7 @@ def gtBpowMul [m][q] (prec: i32) (xs: [m][q]uint) (a: uint) (n: i32) : bool =
 --   Assumes `a > 0` and that `prec` is the precision of xs
 -- ToDo: optimize such that each thread performs one write to shm
 def eqBpowMul [m][q] (prec: i32) (xs: [m][q]uint) (a: uint) (n: i32) : bool =
-  #[unsafe]
+--  #[unsafe]
   if prec < n+1 || prec > n+1 then false
   else 
   let shm = replicate 3 1i32
@@ -195,11 +222,21 @@ def eqBpowMul [m][q] (prec: i32) (xs: [m][q]uint) (a: uint) (n: i32) : bool =
   let shm = opaque <| scatter_stream shm ffacc (iota m)
   in  shm[0] > 0
 
-def bigZero (m: i64) (q: i64) : [m][q]uint = #[unsafe]
+def bigZero (m: i64) (q: i64) : [m][q]uint =
+--   #[unsafe]
+   imapReg (iota m)
+     (\ _ -> let row = #[scratch] replicate q zero_uint in
+             loop row for j < q do let row[j] = zero_uint in row
+     )
+
+
+def bigZeroR (m: i64) (q: i64) : [m][q]uint =
+--   #[unsafe]
    imapReg (iota m)
      (\ _ -> #[sequential] replicate q zero_uint )
 
-def bigOne (m: i64) (q: i64) : [m][q]uint = #[unsafe]
+def bigOne (m: i64) (q: i64) : [m][q]uint =
+--   #[unsafe]
    imapReg (iota m)
      (\ i -> let z = #[sequential] replicate q zero_uint
              in if i != 0 then z
@@ -208,12 +245,13 @@ def bigOne (m: i64) (q: i64) : [m][q]uint = #[unsafe]
 
 -- results in ` a * B^h `
 def mkPowBMul (m: i64) (q: i64) (a: uint) (h: i32) : [m][q]uint =
-  #[unsafe]
-  let f i =
+--  #[unsafe]
+  let f tid =
       let z = #[sequential] replicate q zero_uint
-      let lb = i*q
-      in  if i >= lb+q || i < lb then z
-          else let z[h - i32.i64 lb] = a in z
+      let lb = tid*q
+      in  if h >= i32.i64 lb && h < i32.i64 (lb+q)
+          then let z[h - i32.i64 lb] = a in z
+          else z
   in  opaque <| #[toregmem(1)] map f (iota m)
 
 -- computes ` B^h quo d `, i.e., one digit division from a power of B

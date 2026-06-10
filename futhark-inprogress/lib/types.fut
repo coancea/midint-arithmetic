@@ -29,6 +29,7 @@ let uint_cT   = u64.u32
 --let D_bool = u64.bool
 --let zeroD = 0u64
 
+-- !!! uint_c MUST BE HALF of uint !!!
 type uint_c = u32
 let zero_c = 0u32
 let size_c = 32u64
@@ -59,7 +60,7 @@ def sub128 (a: uint128_t) (b: uint128_t) : uint128_t =
 --   divisor:  the 128-bit value to divide by
 --   result: (quotient, reminder)
 let divmod128 (dividend: uint128_t) (divisor: uint128_t) : (uint128_t, uint128_t) =
-  #[unsafe]
+--  #[unsafe]
   let q : uint128_t = { high = 0u64, low = 0u64 }
   let r : uint128_t = { high = 0u64, low = 0u64 } in
   loop (q,r) for i_rev < 128i32 do
@@ -100,7 +101,7 @@ let divmod128 (dividend: uint128_t) (divisor: uint128_t) : (uint128_t, uint128_t
 
 def shft1_u128 (rem: uint128_t) : uint128_t =
   let r = rem.high << 1
-  let r = r | u64.bool ((rem.low & u64.bool (1u64 < 63)) != 0)
+  let r = r | u64.bool ((rem.low & (1u64 << 63)) != 0)
   let rem = rem with high = r
   let rem = rem with low = rem.low << 1 
   in  rem

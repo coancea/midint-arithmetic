@@ -1,3 +1,4 @@
+import "../intrinsics-accs"
 import "types"
 import "badd"
 
@@ -8,14 +9,14 @@ import "badd"
 
 -- | Specialized case for subtraction: `B^h - as`
 --   Assumes B^h >= as
-def bsubFromBpowReg [m][q] (h: i32) (xs: [m][q]uint) : [m][q]uint =
-  #[unsafe]
+def bsubFrBpowReg [m][q] (h: i32) (xss: [m][q]uint) : [m][q]uint =
+--  #[unsafe]
   let shm = replicate 1 i32.highest
   let ffacc (myacc: *acc ([1]i32)) (tid: i64) : acc ([1]i32) =
       let ind =
         loop ind = i32.highest for i < q do
           let rev_i = q - i - 1
-          in  if xs[tid, rev_i] != 0
+          in  if xss[tid, rev_i] != 0
               then i32.i64 (q * tid + rev_i) else ind
       in write myacc 0 ind
   --
@@ -32,11 +33,43 @@ def bsubFromBpowReg [m][q] (h: i32) (xs: [m][q]uint) : [m][q]uint =
            else x
   let ffout xs tid =
       #[sequential]map2 (ffin tid) xs (iota q)
-   in  opaque <| #[toregmem(1)] map2 ffout xss (iota m)
+  in  opaque <| #[toregmem(1)] map2 ffout xss (iota m)
 
+-- | Specialized case for subtraction: `as - B^h`
+--   Assumes as >= B^h
+def bsubOfBpowReg [m][q] (xss: [m][q]uint) (h: i32) : [m][q]uint =
+--  #[unsafe]
+  let shm = replicate 1 i32.highest
+  let ffacc (myacc: *acc ([1]i32)) (tid: i64) : acc ([1]i32) =
+      let ind =
+        loop ind = i32.highest for i < q do
+          let rev_i = q - i - 1
+          let idx = i32.i64 (q * tid + rev_i) 
+          in  if xss[tid, rev_i] != 0 && idx >= h
+              then idx else ind
+      in write myacc 0 ind
+  --
+  let shm = opaque <|
+    reduce_by_index_stream shm (i32.min) i32.highest ffacc (iota m)
+  --
+  let min_index = shm[0]
+  --
+  let ffin tid x i =
+      let idx = i32.i64 (q * tid + i) in
+      if idx >= h && idx <= min_index
+      then x - 1 else x
+  let ffout xs tid =
+      #[sequential]map2 (ffin tid) xs (iota q)
+  in  opaque <| #[toregmem(1)] map2 ffout xss (iota m)
 
+--------------------------------------
+--- General Case of Subtraction
+--------------------------------------
+
+-- | General case: aregs - bregs
+--   Assumes aregs >= bregs
 let bsubReg [ipb][n][q] (aregs : [ipb*n][q]uint) (bregs : [ipb*n][q]uint) : [ipb*n][q]uint =
-  #[unsafe]
+--  #[unsafe]
   let ff1 tid =
     let (areg, breg) = (aregs[tid], bregs[tid])
     let carry_acc = carryOpNE
@@ -60,7 +93,7 @@ let bsubReg [ipb][n][q] (aregs : [ipb*n][q]uint) (bregs : [ipb*n][q]uint) : [ipb
   let carry_thds = opaque <| scan carrySegOp carryOpNE carry_thds
   --
   let ff2 rs cs tid =
-    #[unsafe]
+--    #[unsafe]
     let is_seg_start = (tid * q) % (q * n) == 0
     let carry = if is_seg_start then carryOpNE else carry_thds[tid-1]
     let rs' = #[scratch] replicate q zero_uint

@@ -6,7 +6,7 @@ import "types"
 -------------------------
 
 def baddOne [m][q] (xss: [m][q]uint) : [m][q]uint =
-  #[unsafe]
+--  #[unsafe]
   let shm = replicate 1 i32.highest
   let ffacc (myacc: *acc ([1]i32)) (tid: i64) : acc ([1]i32) =
       let ind =
@@ -50,13 +50,13 @@ let carrySegOp (c1: cT) (c2: cT) =
          in  ( res | ( (c1 | c2) & 4 ) )
 
 let baddReg [ipb][n][q] (aregs : [ipb*n][q]uint) (bregs : [ipb*n][q]uint) : [ipb*n][q]uint =
-  #[unsafe]
+--  #[unsafe]
   let ff1 tid =
     let (areg, breg) = (aregs[tid], bregs[tid])
     let carry_acc = carryOpNE
     let rs = #[scratch]replicate q zero_uint
     let cs = #[scratch]replicate q carryOpNE
-    let is_seg_start = (tid * q) % (q * n) == 0
+    let is_seg_start = tid % n == 0
     in  loop (carry_acc, rs, cs) for i < q do
           let (a, b) = (areg[i], breg[i])
           let r = a + b
@@ -74,13 +74,13 @@ let baddReg [ipb][n][q] (aregs : [ipb*n][q]uint) (bregs : [ipb*n][q]uint) : [ipb
   let carry_thds = opaque <| scan carrySegOp carryOpNE carry_thds
   --
   let ff2 rs cs tid =
-    #[unsafe]
-    let is_seg_start = (tid * q) % (q * n) == 0
+--    #[unsafe]
+    let is_seg_start = tid % n == 0
     let carry = if is_seg_start then carryOpNE else carry_thds[tid-1]
     let rs' = #[scratch] replicate q zero_uint
     let (rs', _) =
         loop (rs', carry) for i < q do        
-          let vb = cs[i] & 4 == 0 && carry & 1 == 1
+          let vb = carry & 1 == 1  -- && cs[i] & 4 == 0 
           let rs'[i] = rs[i] + uint_bool vb
           let carry = carrySegOp carry cs[i]
           in  (rs', carry)
