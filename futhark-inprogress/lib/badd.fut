@@ -49,7 +49,7 @@ let carrySegOp (c1: cT) (c2: cT) =
          let res = res | (c1 & c2  & 2)
          in  ( res | ( (c1 | c2) & 4 ) )
 
-let baddReg [ipb][n][q] (aregs : [ipb*n][q]uint) (bregs : [ipb*n][q]uint) : [ipb*n][q]uint =
+let baddRegGen [ipb][n][q] (aregs : [ipb*n][q]uint) (bregs : [ipb*n][q]uint) : ([ipb*n][q]uint, [ipb*n][1]cT) =
 --  #[unsafe]
   let ff1 tid =
     let (areg, breg) = (aregs[tid], bregs[tid])
@@ -84,10 +84,12 @@ let baddReg [ipb][n][q] (aregs : [ipb*n][q]uint) (bregs : [ipb*n][q]uint) : [ipb
           let rs'[i] = rs[i] + uint_bool vb
           let carry = carrySegOp carry cs[i]
           in  (rs', carry)
-    in rs'
+    in (rs', #[sequential] replicate 1 carry)
   --
-  in  opaque <| #[toregmem(1)] map3 ff2 rss css (iota (ipb*n))
+  in  opaque <| unzip <| #[toregmem(1)] map3 ff2 rss css (iota (ipb*n))
 
+let baddReg [ipb][n][q] (aregs : [ipb*n][q]uint) (bregs : [ipb*n][q]uint) : [ipb*n][q]uint =
+  (baddRegGen aregs bregs).0
 
 let badd [ipb][n][q] (as : [ipb*n][q]uint) (bs : [ipb*n][q]uint) : [ipb*n][q]uint =
   let areg = #[glb2reg_only(1)] manifest as

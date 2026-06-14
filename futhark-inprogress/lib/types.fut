@@ -10,7 +10,7 @@ let  carryOpNE: cT = 2u32   --2u8
 
 --type cT         = u8
 --let  cTfromBool = u8.bool
---let  two_cT     = 2u8
+--let  carryOpNE  = 2u8
 
 ------------------------------------
 --- Types for big multiplication ---
