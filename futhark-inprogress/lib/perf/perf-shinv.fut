@@ -51,7 +51,6 @@ def shinvWrap [m][q] (vs: [m][2*q]uint) (h: i32) : [m][2*q]uint =
 --  let vss = vss0 :> [m][512][2*4]u64
 --  in  imap2Intra vss hs shinvWrap
 
---
 -- ==
 -- entry: shinv4096Q4
 -- "Shinv4096Q4" script input { mkShinvInput 16384i64 1024i64 4i64 }
@@ -60,8 +59,6 @@ entry shinv4096Q4 [m] (vss0: [m][1024][4]u64) (hs: [m]i32) : [m][1024][2*2]u64 =
   let vss = vss0 :> [m][1024][2*2]u64
   in  imap2Intra vss hs shinvWrap
 
-  
---
 ---- ==
 -- entry: shinv2048Q8
 -- "Shinv2048Q8" script input { mkShinvInput 32768 256 8 } 
@@ -70,7 +67,6 @@ entry shinv4096Q4 [m] (vss0: [m][1024][4]u64) (hs: [m]i32) : [m][1024][2*2]u64 =
 --  let vss = vss0 :> [m][256][2*4]u64
 --  in  imap2Intra vss hs shinvWrap
 
---
 -- ==
 -- entry: shinv2048Q4
 -- "Shinv2048Q4" script input { mkShinvInput 32768 512 4 } 
@@ -79,3 +75,34 @@ entry shinv2048Q4 [m] (vss0: [m][512][4]u64) (hs: [m]i32) : [m][512][2*2]u64 =
   let vss = vss0 :> [m][512][2*2]u64
   in  imap2Intra vss hs shinvWrap
 
+-- ==
+-- entry: shinv1024Q4
+-- "Shinv1024Q4" script input { mkShinvInput 65536 256 4 } 
+entry shinv1024Q4 [m] (vss0: [m][256][4]u64) (hs: [m]i32) : [m][256][2*2]u64 =
+  #[unsafe]
+  let vss = vss0 :> [m][256][2*2]u64
+  in  imap2Intra vss hs shinvWrap
+
+-- ==
+-- entry: shinv512Q4
+-- "Shinv512Q4" script input { mkShinvInput 131072 128 4 } 
+entry shinv512Q4 [m] (vss0: [m][128][4]u64) (hs: [m]i32) : [m][128][2*2]u64 =
+  #[unsafe]
+  let vss = vss0 :> [m][128][2*2]u64
+  in  imap2Intra vss hs shinvWrap
+
+-- ==
+-- entry: shinv256Q4
+-- "Shinv256Q4" script input { mkShinvInput 262144 64 4 } 
+entry shinv256Q4 [m] (vss0: [m][64][4]u64) (hs: [m]i32) : [m][64][2*2]u64 =
+  #[unsafe]
+  let vss = vss0 :> [m][64][2*2]u64
+  in  imap2Intra vss hs shinvWrap
+
+-- ==
+-- entry: shinv128Q4
+-- "Shinv128Q4" script input { mkShinvInput 524288 32 4 } 
+entry shinv128Q4 [m] (vss0: [m][32][4]u64) (hs: [m]i32) : [m][32][2*2]u64 =
+  #[unsafe]
+  let vss = vss0 :> [m][32][2*2]u64
+  in  imap2Intra vss hs shinvWrap
