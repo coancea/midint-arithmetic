@@ -1,6 +1,6 @@
 #!/bin/bash
 # normal cpu stuff: allocate cpus, memory
-#SBATCH --ntasks=1 --cpus-per-task=4 --mem=39000M
+#SBATCH --ntasks=1 --cpus-per-task=1 --mem=39000M
 # we run on the gpu partition and we allocate 1 A100 GPUs
 #SBATCH -p gpu --gres=gpu:A100:1
 #We expect that our program should not run longer than 4 hours
