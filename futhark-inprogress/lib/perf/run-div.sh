@@ -2,7 +2,7 @@
 # normal cpu stuff: allocate cpus, memory
 #SBATCH --ntasks=1 --cpus-per-task=4 --mem=39000M
 # we run on the gpu partition and we allocate 1 A100 GPUs
-#SBATCH -p gpu --gres=gpu:a100:1
+#SBATCH -p gpu --gres=gpu:A100:1
 #We expect that our program should not run longer than 4 hours
 #Note that a program will be killed once it exceeds this time!
 #SBATCH --time=0:10:00
