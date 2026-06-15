@@ -79,8 +79,18 @@ def maxGtInd [m][q] (xss : [m][q]uint) (yss : [m][q]uint) : i32 =
   in  max_index
 
 def gt [m][q] (xss : [m][q]uint) (yss : [m][q]uint) : bool =
-  maxGtInd xss yss > maxGtInd yss xss
-
+  -- maxGtInd xss yss > maxGtInd yss xss
+  let gtind = maxGtInd xss yss
+  let shm = replicate 1 1i32
+  let ffacc (myacc: *acc ([1]i32)) (tid: i64) : acc ([1]i32) =
+      loop myacc for i < q do
+        let ind = tid*q + i in
+        if ind < i64.i32 gtind then myacc
+        else if xss[tid,i] >= yss[tid,i] then myacc
+        else write myacc 0 0i32
+  let shm = opaque <| scatter_stream shm ffacc (iota m)
+  in  shm[0] > 0
+      
 -- zero bigint array and set given index to d
 def zeroAndSet (d : uint) (idx : i32) (m : i64) (q: i64) : [m][q]uint = 
 --  #[unsafe]

@@ -3,6 +3,8 @@ import "utils"
 import "badd"
 import "bsub"
 import "bmulWrap"
+import "bmulFull"
+import "bmul"
 
 --
 -- | Calculates ` B^h - v*w`
@@ -132,14 +134,41 @@ def shinv [m][q] (vs: [m][2*q]uint) (h: i32) : [m][2*q]uint =
       in  refine3 h k 2 vs (w_high, w_low)
   in #[inform_pardim_only(1)] manifest rs
 
---
---  if k == 0 || k == -1                                
---     then   
---  else if gtBpowMul (k+1) vs one_uint h               
---     then bigZero m (2*q)
---  else if gtBpowMul (k+1) vs (highest_uint / 2) (h-1) 
---     then bigOne m (2*q)
---  else if eqBpowMul (k+1) vs one_uint k               
---     then mkPowBMul m (2*q) one_uint (h-k)
---  else
-    -- general treatment
+----------------
+--- division ---
+----------------
+
+def bdivReg [m][q] (us: [m][2*q]uint) (vs: [m][2*q]uint) : ([m][2*q]uint, [m][2*q]uint) =
+  let h  = prec us
+  let ws = shinv vs h
+  -- let us = #[glb2reg_only(1)] manifest us
+  let qs = bmulSftFullRegs (i64.i32 h) (us :> [1*m][2*q]uint) (ws :> [1*m][2*q]uint)
+  let ms = bmulRegsQ (vs :> [1*m][2*q]uint) qs
+  let (qs, ms) = (qs :> [m][2*q]uint, ms :> [m][2*q]uint)
+  --
+  let (ms, qs) = -- handles delta == -1
+    match gt ms us   -- ms > us
+    case false -> (ms, qs)
+    case _ -> (bsubReg' ms vs, bsubOfBpowReg qs 0)
+  --
+  let ms = #[inform_pardim_only(1)] manifest ms
+  let qs = #[inform_pardim_only(1)] manifest qs
+  --
+  let rs = bsubReg' us ms -- initial reminder
+  --
+  let (qs, rs) = -- handles delta == 1
+    match gt vs rs -- vs > rs
+      case true -> (qs, rs)
+      case _ -> (baddOne qs, bsubReg' rs vs)
+  --
+  let qs = #[inform_pardim_only(1)] manifest qs
+  let rs = #[inform_pardim_only(1)] manifest rs
+  --
+  in (qs, rs)           
+
+def bdiv [m][q] (Us: [m][2*q]uint) (Vs: [m][2*q]uint) : ([m][2*q]uint, [m][2*q]uint) =
+  let Ureg = #[glb2reg_only(1)] manifest Us
+  let Vreg = #[glb2reg_only(1)] manifest Vs
+  let (Qreg, Rreg) = bdivReg Us Vreg
+  in  opaque (Qreg, Rreg)
+

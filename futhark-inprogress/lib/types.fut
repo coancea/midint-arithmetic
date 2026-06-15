@@ -4,13 +4,13 @@ import "../intrinsics-accs"
 --- Types for the type of scan operator in big addition ---
 -----------------------------------------------------------
 
-type cT         = u32      --u8
-let  cTfromBool = u32.bool --u8.bool
-let  carryOpNE: cT = 2u32   --2u8
+--type cT         = u32      --u8
+--let  cTfromBool = u32.bool --u8.bool
+--let  carryOpNE: cT = 2u32   --2u8
 
---type cT         = u8
---let  cTfromBool = u8.bool
---let  carryOpNE  = 2u8
+type cT         = u8
+let  cTfromBool = u8.bool
+let  carryOpNE  = 2u8
 
 ------------------------------------
 --- Types for big multiplication ---
