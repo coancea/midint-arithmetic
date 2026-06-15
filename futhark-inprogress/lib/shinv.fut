@@ -138,11 +138,12 @@ def shinv [m][q] (vs: [m][2*q]uint) (h: i32) : [m][2*q]uint =
 --- division ---
 ----------------
 
-def bdivReg [m][q] (us: [m][2*q]uint) (vs: [m][2*q]uint) : ([m][2*q]uint, [m][2*q]uint) =
-  let h  = prec us
+def bdivReg [m][q] (us0: [m][2*q]uint) (vs: [m][2*q]uint) : ([m][2*q]uint, [m][2*q]uint) =
+  let h  = prec us0
   let ws = shinv vs h
-  -- let us = #[glb2reg_only(1)] manifest us
+  let us = #[glb2reg_only(1)] manifest us0
   let qs = bmulSftFullRegs (i64.i32 h) (us :> [1*m][2*q]uint) (ws :> [1*m][2*q]uint)
+    
   let ms = bmulRegsQ (vs :> [1*m][2*q]uint) qs
   let (qs, ms) = (qs :> [m][2*q]uint, ms :> [m][2*q]uint)
   --
@@ -167,7 +168,7 @@ def bdivReg [m][q] (us: [m][2*q]uint) (vs: [m][2*q]uint) : ([m][2*q]uint, [m][2*
   in (qs, rs)           
 
 def bdiv [m][q] (Us: [m][2*q]uint) (Vs: [m][2*q]uint) : ([m][2*q]uint, [m][2*q]uint) =
-  let Ureg = #[glb2reg_only(1)] manifest Us
+  -- let Ureg = #[glb2reg_only(1)] manifest Us
   let Vreg = #[glb2reg_only(1)] manifest Vs
   let (Qreg, Rreg) = bdivReg Us Vreg
   in  opaque (Qreg, Rreg)
