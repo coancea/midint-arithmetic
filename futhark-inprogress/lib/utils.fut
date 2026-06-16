@@ -40,6 +40,22 @@ def cpReg2ShmNoAcc [M][Q] (Areg: [M][Q]uint) : *[M*Q]uint =
 --- Helper functions for division
 -----------------------------------------
 
+def precGlb [m][q] (vss : [m][q]uint) : i32 =
+  let shm = replicate 1 0i32
+  let ffacc (myacc: *acc ([1]i32)) (tid: i64) : acc ([1]i32) =
+      let pind =
+        loop pind = 0i32 for i < q do
+          let ind = i*m + tid
+          let (i1, i2) = (ind / q, ind % q) in
+          if vss[i1, i2] != zero_uint
+          then i32.i64 (ind + 1) else pind
+      in if pind > 0 then write myacc 0 pind else myacc
+  --
+  let shm = opaque <|
+    reduce_by_index_stream shm (i32.max) 0i32 ffacc (iota m)
+  in  shm[0]
+
+
 def precRed [m][q] (vss : [m][q]uint) : i32 =
 --  #[unsafe]
   let ff i vs =
