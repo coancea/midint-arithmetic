@@ -289,7 +289,7 @@ entry manyAdditions2048 [m] (ass0: [m][2][2048]u64) (bss0: [m][2][2048]u64) : []
 -- ==
 -- entry: manyAdditions2048Inst1
 -- compiled random input {[32768][1][2048]u64  [32768][21[2048]u64 }
-entry manyAdditions2048 [m] (ass0: [m][1][2048]u64) (bss0: [m][1][2048]u64) : [][][]u64 = #[unsafe]
+entry manyAdditions2048Inst1 [m] (ass0: [m][1][2048]u64) (bss0: [m][1][2048]u64) : [][][]u64 = #[unsafe]
    let ass   = (map flatten ass0) :> [m][1*(4*512)]u64
    let bss   = (map flatten bss0) :> [m][1*(4*512)]u64
    let apb   = imap2Intra ass bss badd      -- a + b
