@@ -138,10 +138,10 @@ def shinv [m][q] (vs: [m][2*q]uint) (h: i32) : [m][2*q]uint =
 --- division ---
 ----------------
 
-def bdivReg [m][q] (us0: [m][2*q]uint) (vs: [m][2*q]uint) : ([m][2*q]uint, [m][2*q]uint) =
-  let h  = precGlb us0
+def bdivReg [m][q] (us_glb: [m][2*q]uint) (vs: [m][2*q]uint) : ([m][2*q]uint, [m][2*q]uint) =
+  let h  = precGlb us_glb
   let ws = shinv vs h
-  let us = #[glb2reg_only(1)] manifest us0
+  let us = #[glb2reg_only(1)] manifest us_glb
   let qs = bmulSftFullRegs (i64.i32 h) (us :> [1*m][2*q]uint) (ws :> [1*m][2*q]uint)
     
   let ms = bmulRegsQ (vs :> [1*m][2*q]uint) qs
@@ -172,4 +172,49 @@ def bdiv [m][q] (Us: [m][2*q]uint) (Vs: [m][2*q]uint) : ([m][2*q]uint, [m][2*q]u
   let Vreg = #[glb2reg_only(1)] manifest Vs
   let (Qreg, Rreg) = bdivReg Us Vreg
   in  opaque (Qreg, Rreg)
+
+def bdivBatch [insts][m][q]
+              (uss_glb: [insts][m][2*q]uint) 
+              (vss_glb: [insts][m][2*q]uint) 
+            : ([insts][m][2*q]uint, [insts][m][2*q]uint) =
+  -- step 1: distributed computation of the whole-shifted index
+  let fshinv us_glb vs_glb =
+    let us = #[glb2reg_only(1)] manifest us_glb
+    let h  = prec us
+    let vs = #[glb2reg_only(1)] manifest vs_glb
+    in  (h, shinv vs h)
+  let (hs_glb, wss_glb) = unzip <| opaque <| imap2Intra uss_glb vss_glb fshinv
+  -- step 2: compute the full multiplication:
+  let fFMul h us_glb ws_glb =
+    let us = #[glb2reg_only(1)] manifest us_glb
+    let ws = #[glb2reg_only(1)] manifest ws_glb
+    in  bmulSftFullRegs (i64.i32 h) (us :> [1*m][2*q]uint) (ws :> [1*m][2*q]uint)
+  let qss_glb = opaque <| imap3Intra hs_glb uss_glb wss_glb fFMul
+  -- step 3: perform the rest of the computation
+  let fMulSub us_glb vs_glb qs_glb =
+    let us = #[glb2reg_only(1)] manifest us_glb
+    let vs = #[glb2reg_only(1)] manifest vs_glb
+    let qs = #[glb2reg_only(1)] manifest qs_glb
+    --
+    let ms = bmulRegsQ (vs :> [1*m][2*q]uint) qs
+    let (qs, ms) = (qs :> [m][2*q]uint, ms :> [m][2*q]uint)
+    --
+    let (ms, qs) = -- handles delta == -1
+      match gt ms us   -- ms > us
+      case false -> (ms, qs)
+      case _ -> (bsubReg' ms vs, bsubOfBpowReg qs 0)
+    let ms = #[inform_pardim_only(1)] manifest ms
+    let qs = #[inform_pardim_only(1)] manifest qs
+    --
+    let rs = bsubReg' us ms -- initial reminder
+    --
+    let (qs, rs) = -- handles delta == 1
+      match gt vs rs -- vs > rs
+        case true -> (qs, rs)
+        case _ -> (baddOne qs, bsubReg' rs vs)
+    let qs = #[inform_pardim_only(1)] manifest qs
+    let rs = #[inform_pardim_only(1)] manifest rs
+    in (qs, rs)
+  --
+  in unzip <| opaque <| imap3Intra uss_glb vss_glb qss_glb fMulSub
 
