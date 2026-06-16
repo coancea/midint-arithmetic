@@ -36,49 +36,76 @@ entry mkShinvInput (num_instances: i64) (m: i64) (q2: i64)
 --- entry points for evaluating the performance of shinv
 -------------------------------------------------------------
 
---
 ---- ==
--- entry: shinv4096Q8
--- "Shinv4096Q8" script input { mkShinvInput 16384 512 8 }
---entry shinv4096Q8 [m] (vss0: [m][512][8]u64) (hs: [m]i32) : [m][512][2*4]u64 =
---  #[unsafe]
---  let vss = vss0 :> [m][512][2*4]u64
---  in  imap2Intra vss hs shinvWrap
-
--- ==
 -- entry: bdiv4096Q4
 -- "Bdiv4096Q4" script input { mkShinvInput 16384i64 1024i64 4i64 }
-entry bdiv4096Q4 [m] (uss0: [m][1024][4]u64) (vss0: [m][1024][4]u64) : ([m][1024][2*2]u64, [m][1024][2*2]u64) =
-  #[unsafe]
-  let uss = uss0 :> [m][1024][2*2]u64
-  let vss = vss0 :> [m][1024][2*2]u64
-  in  unzip <| imap2Intra uss vss bdiv
+--entry bdiv4096Q4 [m] (uss0: [m][1024][4]u64) (vss0: [m][1024][4]u64) : ([m][1024][2*2]u64, [m][1024][2*2]u64) =
+--  #[unsafe]
+--  let uss = uss0 :> [m][1024][2*2]u64
+--  let vss = vss0 :> [m][1024][2*2]u64
+--  in  unzip <| imap2Intra uss vss bdiv
 
 -- ==
+-- entry: bdiv4096Q8
+-- "Bdiv4096Q8" script input { mkShinvInput 16384i64 512i64 8i64 }
+entry bdiv4096Q8 [m] (uss0: [m][512][8]u64) (vss0: [m][512][8]u64) : ([m][512][2*4]u64, [m][512][2*4]u64) =
+  #[unsafe]
+  let uss = uss0 :> [m][512][2*4]u64
+  let vss = vss0 :> [m][512][2*4]u64
+  in  unzip <| imap2Intra uss vss bdiv
+
+---- ==
 -- entry: bdiv2048Q4
 -- "Bdiv2048Q4" script input { mkShinvInput 32768i64 512i64 4i64 }
-entry bdiv2048Q4 [m] (uss0: [m][512][4]u64) (vss0: [m][512][4]u64) : ([m][512][2*2]u64, [m][512][2*2]u64) =
-  #[unsafe]
-  let uss = uss0 :> [m][512][2*2]u64
-  let vss = vss0 :> [m][512][2*2]u64
-  in  unzip <| imap2Intra uss vss bdiv
+--entry bdiv2048Q4 [m] (uss0: [m][512][4]u64) (vss0: [m][512][4]u64) : ([m][512][2*2]u64, [m][512][2*2]u64) =
+--  #[unsafe]
+--  let uss = uss0 :> [m][512][2*2]u64
+--  let vss = vss0 :> [m][512][2*2]u64
+--  in  unzip <| imap2Intra uss vss bdiv
 
 -- ==
+-- entry: bdiv2048Q8
+-- "Bdiv2048Q8" script input { mkShinvInput 32768i64 256i64 8i64 }
+entry bdiv2048Q8 [m] (uss0: [m][256][8]u64) (vss0: [m][256][8]u64) : ([m][256][2*4]u64, [m][256][2*4]u64) =
+  #[unsafe]
+  let uss = uss0 :> [m][256][2*4]u64
+  let vss = vss0 :> [m][256][2*4]u64
+  in  unzip <| imap2Intra uss vss bdiv
+
+---- ==
 -- entry: bdiv1024Q4
 -- "Bdiv1024Q4" script input { mkShinvInput 65536i64 256i64 4i64 }
-entry bdiv1024Q4 [m] (uss0: [m][256][4]u64) (vss0: [m][256][4]u64) : ([m][256][2*2]u64, [m][256][2*2]u64) =
-  #[unsafe]
-  let uss = uss0 :> [m][256][2*2]u64
-  let vss = vss0 :> [m][256][2*2]u64
-  in  unzip <| imap2Intra uss vss bdiv
+--entry bdiv1024Q4 [m] (uss0: [m][256][4]u64) (vss0: [m][256][4]u64) : ([m][256][2*2]u64, [m][256][2*2]u64) =
+--  #[unsafe]
+--  let uss = uss0 :> [m][256][2*2]u64
+--  let vss = vss0 :> [m][256][2*2]u64
+--  in  unzip <| imap2Intra uss vss bdiv
 
 -- ==
+-- entry: bdiv1024Q8
+-- "Bdiv1024Q8" script input { mkShinvInput 65536i64 128i64 8i64 }
+entry bdiv1024Q8 [m] (uss0: [m][128][8]u64) (vss0: [m][128][8]u64) : ([m][128][2*4]u64, [m][128][2*4]u64) =
+  #[unsafe]
+  let uss = uss0 :> [m][128][2*4]u64
+  let vss = vss0 :> [m][128][2*4]u64
+  in  unzip <| imap2Intra uss vss bdiv
+
+---- ==
 -- entry: bdiv512Q4
 -- "Bdiv512Q4" script input { mkShinvInput 131072i64 128i64 4i64 }
-entry bdiv512Q4 [m] (uss0: [m][128][4]u64) (vss0: [m][128][4]u64) : ([m][128][2*2]u64, [m][128][2*2]u64) =
+--entry bdiv512Q4 [m] (uss0: [m][128][4]u64) (vss0: [m][128][4]u64) : ([m][128][2*2]u64, [m][128][2*2]u64) =
+--  #[unsafe]
+--  let uss = uss0 :> [m][128][2*2]u64
+--  let vss = vss0 :> [m][128][2*2]u64
+--  in  unzip <| imap2Intra uss vss bdiv
+
+-- ==
+-- entry: bdiv512Q8
+-- "Bdiv512Q8" script input { mkShinvInput 131072 64i64 8i64 }
+entry bdiv512Q8 [m] (uss0: [m][64][8]u64) (vss0: [m][64][8]u64) : ([m][64][2*4]u64, [m][64][2*4]u64) =
   #[unsafe]
-  let uss = uss0 :> [m][128][2*2]u64
-  let vss = vss0 :> [m][128][2*2]u64
+  let uss = uss0 :> [m][64][2*4]u64
+  let vss = vss0 :> [m][64][2*4]u64
   in  unzip <| imap2Intra uss vss bdiv
 
 -- ==
