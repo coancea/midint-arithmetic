@@ -139,7 +139,7 @@ def shinv [m][q] (vs: [m][2*q]uint) (h: i32) : [m][2*q]uint =
 ----------------
 
 def bdivReg [m][q] (us0: [m][2*q]uint) (vs: [m][2*q]uint) : ([m][2*q]uint, [m][2*q]uint) =
-  let h  = prec us0
+  let h  = precGlb us0
   let ws = shinv vs h
   let us = #[glb2reg_only(1)] manifest us0
   let qs = bmulSftFullRegs (i64.i32 h) (us :> [1*m][2*q]uint) (ws :> [1*m][2*q]uint)
