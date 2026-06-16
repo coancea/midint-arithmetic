@@ -227,3 +227,58 @@ perf-poly-128.fut:poly128 (no tuning file):
 
 perf-poly-64.fut:poly64 (no tuning file):
 [262144][64][4]u64 [262144][64][4]u64:      29844μs (95% CI: [   29644.6,    29931.8])
+
+=================================
+=== FUTHARK SHINV
+=================================
+
+[xmf768@hendrixfut03fl perf]$ futhark bench --backend=cuda perf-shinv.fut -r 3
+Compiling perf-shinv.fut...
+Reporting arithmetic mean runtime of at least 3 runs for each dataset (min 0.5s).
+More runs automatically performed for up to 300s to ensure accurate measurement.
+
+perf-shinv.fut:shinv4096Q4 (no tuning file):
+Shinv4096Q4:     785828μs (95% CI: [  785781.0,   785856.3])
+
+perf-shinv.fut:shinv2048Q4 (no tuning file):
+Shinv2048Q4:     504216μs (95% CI: [  504200.0,   504227.0])
+
+perf-shinv.fut:shinv1024Q4 (no tuning file):
+Shinv1024Q4:     379308μs (95% CI: [  379300.0,   379314.0])
+
+perf-shinv.fut:shinv512Q4 (no tuning file):
+Shinv512Q4:      181197μs (95% CI: [  181182.0,   181208.3])
+
+perf-shinv.fut:shinv256Q4 (no tuning file):
+Shinv256Q4:      145612μs (95% CI: [  145555.2,   145647.5])
+
+perf-shinv.fut:shinv128Q4 (no tuning file):
+Shinv128Q4:      124439μs (95% CI: [  124409.8,   124469.4])
+
+=================================
+=== FUTHARK DIV
+=================================
+
+[xmf768@hendrixfut03fl perf]$ futhark bench --backend=cuda perf-div.fut -r 3
+Compiling perf-div.fut...
+Reporting arithmetic mean runtime of at least 3 runs for each dataset (min 0.5s).
+More runs automatically performed for up to 300s to ensure accurate measurement.
+
+perf-div.fut:bdiv4096Q4 (no tuning file):
+Bdiv4096Q4:    1626865μs (95% CI: [ 1626773.0,  1626953.3])
+
+perf-div.fut:bdiv2048Q4 (no tuning file):
+Bdiv2048Q4:     962004μs (95% CI: [  961932.0,   962054.7])
+
+perf-div.fut:bdiv1024Q4 (no tuning file):
+Bdiv1024Q4:     696725μs (95% CI: [  696664.0,   696756.7])
+
+perf-div.fut:bdiv512Q4 (no tuning file):
+Bdiv512Q4:      312166μs (95% CI: [  312115.0,   312203.3])
+
+perf-div.fut:bdiv256Q4 (no tuning file):
+Bdiv256Q4:      278741μs (95% CI: [  278591.0,   278849.0])
+
+perf-div.fut:bdiv128Q4 (no tuning file):
+Bdiv128Q4:      254532μs (95% CI: [  254396.0,   254614.3])
+
