@@ -285,4 +285,30 @@ Bdiv256Q4:      278741μs (95% CI: [  278591.0,   278849.0])
 perf-div.fut:bdiv128Q4 (no tuning file):
 Bdiv128Q4:      254532μs (95% CI: [  254396.0,   254614.3])
 
+=====================================
+=====================================
+=== Students' Prototype CUDA BDIV ===
+=====================================
+=====================================
+
+[xmf768@hendrixfut03fl cuda]$ make
+nvcc -O3 -arch=sm_80 main.cu -lgmp -diag-suppress 63 -o main.exe && ./main.exe 134217728
+Division on 262144-bit Big-Numbers (base u64) runs 16384 instances in: 1404255 microsecs, Gu32ops/sec: 2348.96, Mil-Instances/sec: 0.01
+VALID RESULT!
+Division on 131072-bit Big-Numbers (base u64) runs 32768 instances in: 702138 microsecs, Gu32ops/sec: 2348.92, Mil-Instances/sec: 0.05
+VALID RESULT!
+Division on 65536-bit Big-Numbers (base u64) runs 65536 instances in: 395165 microsecs, Gu32ops/sec: 2086.81, Mil-Instances/sec: 0.17
+VALID RESULT!
+Division on 32768-bit Big-Numbers (base u64) runs 131072 instances in: 297886 microsecs, Gu32ops/sec: 1384.14, Mil-Instances/sec: 0.44
+VALID RESULT!
+Division on 16384-bit Big-Numbers (base u64) runs 262144 instances in: 284195 microsecs, Gu32ops/sec: 725.41, Mil-Instances/sec: 0.92
+VALID RESULT!
+Division on 8192-bit Big-Numbers (base u64) runs 524288 instances in: 191229 microsecs, Gu32ops/sec: 539.04, Mil-Instances/sec: 2.74
+VALID RESULT!
+Division on 4096-bit Big-Numbers (base u64) runs 1048576 instances in: 316624 microsecs, Gu32ops/sec: 162.78, Mil-Instances/sec: 3.31
+VALID RESULT!
+Division on 2048-bit Big-Numbers (base u64) runs 2097152 instances in: 457525 microsecs, Gu32ops/sec: 56.32, Mil-Instances/sec: 4.58
+VALID RESULT!
+Division on 1024-bit Big-Numbers (base u64) runs 4194304 instances in: 757021 microsecs, Gu32ops/sec: 17.02, Mil-Instances/sec: 5.54
+VALID RESULT!
 

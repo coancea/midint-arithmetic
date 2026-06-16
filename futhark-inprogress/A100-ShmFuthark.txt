@@ -1,0 +1,222 @@
+-----------------
+--- ONE BADD: ---
+-----------------
+
+[xmf768@hendrixfut03fl futhark-inprogress]$ futhark bench --backend=cuda perf-one-badd.fut 
+Compiling perf-one-badd.fut...
+Reporting arithmetic mean runtime of at least 10 runs for each dataset (min 0.5s).
+More runs automatically performed for up to 300s to ensure accurate measurement.
+
+perf-one-badd.fut:oneAdd4096Q8 (no tuning file):
+[16384][512][8]u64 [16384][512][8]u64:         1940μs (95% CI: [    1934.8,     1967.8])
+
+perf-one-badd.fut:oneAdd4096 (no tuning file):
+[16384][1024][4]u64 [16384][1024][4]u64:       1747μs (95% CI: [    1745.9,     1747.1])
+
+perf-one-badd.fut:oneAdd2048Q8 (no tuning file):
+[32768][256][8]u64 [32768][256][8]u64:         1407μs (95% CI: [    1405.5,     1408.7])
+
+perf-one-badd.fut:oneAdd2048 (no tuning file):
+[32768][512][4]u64 [32768][512][4]u64:         1241μs (95% CI: [    1240.1,     1241.1])
+
+perf-one-badd.fut:oneAdd1024 (no tuning file):
+[65536][256][4]u64 [65536][256][4]u64:         1209μs (95% CI: [    1208.8,     1209.2])
+
+perf-one-badd.fut:oneAdd512 (no tuning file):
+[131072][128][4]u64 [131072][128][4]u64:       1198μs (95% CI: [    1197.7,     1198.0])
+
+perf-one-badd.fut:oneAdd256 (no tuning file):
+[262144][64][4]u64 [262144][64][4]u64:         1200μs (95% CI: [    1199.5,     1200.0])
+
+perf-one-badd.fut:oneAdd128 (no tuning file):
+[262144][64][4]u64 [262144][64][4]u64:         1199μs (95% CI: [    1199.1,     1199.6])
+
+perf-one-badd.fut:oneAdd64 (no tuning file):
+[262144][64][4]u64 [262144][64][4]u64:         1204μs (95% CI: [    1203.6,     1204.1])
+
+----------------
+--- SIX BADD ---
+----------------
+
+| | WITH Q=4 | |  !!! BETTER THAN Q = 8 !!!
+
+[xmf768@hendrixfut03fl futhark-inprogress]$ futhark bench --backend=cuda perf-six-badd.fut 
+Compiling perf-six-badd.fut...
+Reporting arithmetic mean runtime of at least 10 runs for each dataset (min 0.5s).
+More runs automatically performed for up to 300s to ensure accurate measurement.
+
+perf-six-badd.fut:sixAdds4096 (no tuning file):
+[16384][1024][4]u64 [16384][1024][4]u64: 
+Kernel sixAdds4096.segmap_intrablock_15003 with 204800 bytes of memory exceeds device limit of 165888
+
+perf-six-badd.fut:sixAdds2048 (no tuning file):
+[32768][512][4]u64 [32768][512][4]u64:         5809μs (95% CI: [    5808.5,     5810.1])
+
+perf-six-badd.fut:sixAdds1024 (no tuning file):
+[65536][256][4]u64 [65536][256][4]u64:         4102μs (95% CI: [    4101.4,     4102.3])
+
+perf-six-badd.fut:sixAdds512 (no tuning file):
+[131072][128][4]u64 [131072][128][4]u64:       3960μs (95% CI: [    3954.8,     3964.7])
+
+perf-six-badd.fut:sixAdds256 (no tuning file):
+[262144][64][4]u64 [262144][64][4]u64:         3975μs (95% CI: [    3969.2,     3980.7])
+
+perf-six-badd.fut:sixAdds128 (no tuning file):
+[262144][64][4]u64 [262144][64][4]u64:         3966μs (95% CI: [    3959.9,     3969.9])
+
+perf-six-badd.fut:sixAdds64 (no tuning file):
+[262144][64][4]u64 [262144][64][4]u64:         3973μs (95% CI: [    3967.6,     3976.2])
+
+| | WITH Q=8 | |
+
+[xmf768@hendrixfut03fl perf]$ futhark bench --backend=cuda perf-six-badd-Q8.fut 
+Compiling perf-six-badd-Q8.fut...
+Reporting arithmetic mean runtime of at least 10 runs for each dataset (min 0.5s).
+More runs automatically performed for up to 300s to ensure accurate measurement.
+
+perf-six-badd-Q8.fut:sixAdds4096 (no tuning file):
+[16384][512][8]u64 [16384][512][8]u64: 
+Kernel sixAdds4096.segmap_intrablock_15469 with 192512 bytes of memory exceeds device limit of 165888
+
+perf-six-badd-Q8.fut:sixAdds2048 (no tuning file):
+[32768][256][8]u64 [32768][256][8]u64:       7367μs (95% CI: [    7364.3,     7376.1])
+
+perf-six-badd-Q8.fut:sixAdds1024 (no tuning file):
+[65536][128][8]u64 [65536][128][8]u64:       5451μs (95% CI: [    5449.9,     5451.5])
+
+perf-six-badd-Q8.fut:sixAdds512 (no tuning file):
+[131072][64][8]u64 [131072][64][8]u64:       5334μs (95% CI: [    5332.8,     5334.3])
+
+perf-six-badd-Q8.fut:sixAdds256 (no tuning file):
+[131072][64][8]u64 [131072][64][8]u64:       5407μs (95% CI: [    5406.1,     5408.1])
+
+perf-six-badd-Q8.fut:sixAdds128 (no tuning file):
+[131072][64][8]u64 [131072][64][8]u64:       5402μs (95% CI: [    5401.5,     5403.0])
+
+perf-six-badd-Q8.fut:sixAdds64 (no tuning file):
+[131072][64][8]u64 [131072][64][8]u64:       5405μs (95% CI: [    5404.5,     5406.1])
+
+-----------------
+--- ONE BMUL: ---
+-----------------
+
+[xmf768@hendrixfut03fl perf]$ futhark bench --backend=cuda perf-mul.fut -r 5
+Compiling perf-mul.fut...
+Reporting arithmetic mean runtime of at least 5 runs for each dataset (min 0.5s).
+More runs automatically performed for up to 300s to ensure accurate measurement.
+
+perf-mul.fut:oneMultiply4096Q8 (no tuning file):
+[16384][512][8]u64 [16384][512][8]u64:       300035μs (95% CI: [  298314.8,   301395.4])
+
+perf-mul.fut:oneMultiply4096 (no tuning file):
+[16384][1024][4]u64 [16384][1024][4]u64: 
+Kernel oneMultiply4096.segmap_intrablock_23829 with 167936 bytes of memory exceeds device limit of 165888
+
+perf-mul.fut:oneMultiply2048 (no tuning file):
+[32768][512][4]u64 [32768][512][4]u64:       148327μs (95% CI: [  147740.8,   148548.6])
+
+perf-mul.fut:oneMultiply1024 (no tuning file):
+[65536][256][4]u64 [65536][256][4]u64:        74670μs (95% CI: [   74183.3,    74832.6])
+
+perf-mul.fut:oneMultiply512 (no tuning file):
+[131072][128][4]u64 [131072][128][4]u64:      39693μs (95% CI: [   39487.3,    39792.4])
+
+perf-mul.fut:oneMultiply256 (no tuning file):
+[262144][64][4]u64 [262144][64][4]u64:        22312μs (95% CI: [   22242.3,    22360.7])
+
+perf-mul.fut:oneMultiply128 (no tuning file):
+[262144][64][4]u64 [262144][64][4]u64:        13595μs (95% CI: [   13574.5,    13614.1])
+
+perf-mul.fut:oneMultiply64 (no tuning file):
+[262144][64][4]u64 [262144][64][4]u64:         7301μs (95% CI: [    7282.4,     7312.4])
+
+------------------
+--- POLY BMUL: ---
+------------------
+
+[xmf768@hendrixfut03fl futhark-inprogress]$ futhark dataset -b -g [16384][1024][4]u64 -g [16384][1024][4]u64 | ./perf-poly-4096 -n -t /dev/stderr -r 3 --entry=poly4096
+./perf-poly-4096: Kernel poly4096.segmap_intrablock_20448 with 172032 bytes of memory exceeds device limit of 165888
+
+[xmf768@hendrixfut03fl futhark-inprogress]$ futhark bench --backend=cuda perf-poly-2048.fut 
+Compiling perf-poly-2048.fut...
+Reporting arithmetic mean runtime of at least 10 runs for each dataset (min 0.5s).
+More runs automatically performed for up to 300s to ensure accurate measurement.
+
+perf-poly-2048.fut:poly2048 (no tuning file):
+[32768][512][4]u64 [32768][512][4]u64:     600193μs (95% CI: [  599055.0,   601176.8])
+
+perf-poly-1024.fut:poly1024 (no tuning file):
+[65536][256][4]u64 [65536][256][4]u64:     301008μs (95% CI: [  300232.7,   301842.2])
+
+perf-poly-512.fut:poly512 (no tuning file):
+[131072][128][4]u64 [131072][128][4]u64:     160972μs (95% CI: [  160435.4,   162253.9])
+
+perf-poly-256.fut:poly256 (no tuning file):
+[262144][64][4]u64 [262144][64][4]u64:      90515μs (95% CI: [   90213.8,    90639.8])
+
+perf-poly-128.fut:poly128 (no tuning file):
+[262144][64][4]u64 [262144][64][4]u64:      55607μs (95% CI: [   55421.4,    55834.3])
+
+perf-poly-64.fut:poly64 (no tuning file):
+[262144][64][4]u64 [262144][64][4]u64:      30827μs (95% CI: [   30550.3,    30955.5])
+
+-------------
+--- BDIV: ---
+-------------
+
+[xmf768@hendrixfut03fl perf]$ futhark bench --backend=cuda perf-div.fut -r 4
+Compiling perf-div.fut...
+Reporting arithmetic mean runtime of at least 4 runs for each dataset (min 0.5s).
+More runs automatically performed for up to 300s to ensure accurate measurement.
+
+perf-div.fut:bdiv4096Q4 (no tuning file):
+Bdiv4096Q4: 
+Kernel bdiv4096Q4.segmap_intrablock_80428 with 794624 bytes of memory exceeds device limit of 165888
+
+perf-div.fut:bdiv2048Q4 (no tuning file):
+Bdiv2048Q4: 
+Kernel bdiv2048Q4.segmap_intrablock_91221 with 397312 bytes of memory exceeds device limit of 165888
+
+perf-div.fut:bdiv1024Q8 (no tuning file):
+Bdiv1024Q8: 
+Kernel bdiv1024Q8.segmap_intrablock_102368 with 185344 bytes of memory exceeds device limit of 165888
+
+perf-div.fut:bdiv512Q4 (no tuning file):
+Bdiv512Q4:      739796μs (95% CI: [  739764.8,   739823.0])
+
+perf-div.fut:bdiv256Q4 (no tuning file):
+Bdiv256Q4:      364774μs (95% CI: [  364752.0,   364790.0])
+
+perf-div.fut:bdiv128Q4 (no tuning file):
+Bdiv128Q4:      360569μs (95% CI: [  360307.0,   360681.8])
+
+--------------
+--- SHINV: ---
+--------------
+
+[xmf768@hendrixfut03fl perf]$ futhark bench --backend=cuda perf-shinv.fut -r 5
+Compiling perf-shinv.fut...
+Reporting arithmetic mean runtime of at least 5 runs for each dataset (min 0.5s).
+More runs automatically performed for up to 300s to ensure accurate measurement.
+
+perf-shinv.fut:shinv4096Q4 (no tuning file):
+Shinv4096Q4: 
+Kernel shinv4096Q4.segmap_intrablock_68832 with 737280 bytes of memory exceeds device limit of 165888
+
+perf-shinv.fut:shinv2048Q4 (no tuning file):
+Shinv2048Q4: 
+Kernel shinv2048Q4.segmap_intrablock_76168 with 368640 bytes of memory exceeds device limit of 165888
+
+perf-shinv.fut:shinv1024Q4 (no tuning file):
+Shinv1024Q4: 
+Kernel shinv1024Q4.segmap_intrablock_83504 with 184320 bytes of memory exceeds device limit of 165888
+
+perf-shinv.fut:shinv512Q4 (no tuning file):
+Shinv512Q4:      479180μs (95% CI: [  479163.2,   479194.2])
+
+perf-shinv.fut:shinv256Q4 (no tuning file):
+Shinv256Q4:      235103μs (95% CI: [  235083.4,   235121.8])
+
+perf-shinv.fut:shinv128Q4 (no tuning file):
+Shinv128Q4:      209608μs (95% CI: [  209558.4,   209643.6])
+
