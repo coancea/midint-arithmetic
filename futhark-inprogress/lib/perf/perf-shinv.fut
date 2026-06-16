@@ -75,12 +75,20 @@ entry shinv2048Q4 [m] (vss0: [m][512][4]u64) (hs: [m]i32) : [m][512][2*2]u64 =
   let vss = vss0 :> [m][512][2*2]u64
   in  imap2Intra vss hs shinvWrap
 
--- ==
+---- ==
 -- entry: shinv1024Q4
 -- "Shinv1024Q4" script input { mkShinvInput 65536 256 4 } 
-entry shinv1024Q4 [m] (vss0: [m][256][4]u64) (hs: [m]i32) : [m][256][2*2]u64 =
+--entry shinv1024Q4 [m] (vss0: [m][256][4]u64) (hs: [m]i32) : [m][256][2*2]u64 =
+--  #[unsafe]
+--  let vss = vss0 :> [m][256][2*2]u64
+--  in  imap2Intra vss hs shinvWrap
+
+-- ==
+-- entry: shinv1024Q8
+-- "Shinv1024Q8" script input { mkShinvInput 65536 128 8 } 
+entry shinv1024Q8 [m] (vss0: [m][128][8]u64) (hs: [m]i32) : [m][128][2*4]u64 =
   #[unsafe]
-  let vss = vss0 :> [m][256][2*2]u64
+  let vss = vss0 :> [m][128][2*4]u64
   in  imap2Intra vss hs shinvWrap
 
 -- ==

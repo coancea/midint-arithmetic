@@ -270,8 +270,11 @@ Bdiv4096Q4:    1626865μs (95% CI: [ 1626773.0,  1626953.3])
 perf-div.fut:bdiv2048Q4 (no tuning file):
 Bdiv2048Q4:     962004μs (95% CI: [  961932.0,   962054.7])
 
-perf-div.fut:bdiv1024Q4 (no tuning file):
-Bdiv1024Q4:     696725μs (95% CI: [  696664.0,   696756.7])
+perf-div.fut:bdiv1024Q8 (no tuning file):
+Bdiv1024Q8:     606002μs (95% CI: [  605369.4,   606267.8])
+
+--perf-div.fut:bdiv1024Q4 (no tuning file):
+--Bdiv1024Q4:     696725μs (95% CI: [  696664.0,   696756.7])
 
 perf-div.fut:bdiv512Q4 (no tuning file):
 Bdiv512Q4:      312166μs (95% CI: [  312115.0,   312203.3])
@@ -281,4 +284,5 @@ Bdiv256Q4:      278741μs (95% CI: [  278591.0,   278849.0])
 
 perf-div.fut:bdiv128Q4 (no tuning file):
 Bdiv128Q4:      254532μs (95% CI: [  254396.0,   254614.3])
+
 
