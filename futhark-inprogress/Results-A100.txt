@@ -207,6 +207,12 @@ perf-mul.fut:oneMultiply64 (no tuning file):
 == POLY: 1.34 to 1.31 slowdown vs CUDA prototype ===
 ====================================================
 
+futhark dataset -b -g [8192][1024][8]u64 -g [8192][1024][8]u64 | ./perf-poly-8192Q8 -n -t /dev/stderr -r 3 --entry=poly8192Q8
+2284759
+2292812
+2296069
+
+
 perf-poly-8192Q8.fut:poly8192Q8 (no tuning file):
 [8192][1024][8]u64 [8192][1024][8]u64:    2272129μs (95% CI: [ 2268052.6,  2275818.1])
 

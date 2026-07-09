@@ -4,10 +4,10 @@ import "../lib/bmul"
 
 def poly [m][ipb][n][q] (ass: [m][ipb*n][2*q]u64) (bss: [m][ipb*n][2*q]u64) : [m][ipb*n][2*q]u64 = 
   #[unsafe]
-  let a2pbs = opaque <| imap2Intra ass bss (\ a b -> let a2 = bmul a a in badd a2 b)
-  let b2pbs = opaque <| imap2Intra ass bss (\ a b -> let b2 = bmul b b in badd b2 a) -- should be badd b2 b
-  let prods = opaque <| imap2Intra a2pbs b2pbs (\ a2pb b2pb -> bmul a2pb b2pb)
-  in  opaque <| imap3Intra ass bss prods (\ a b prod -> let ab = bmul a b in badd prod ab)
+  let a2pbs = imap2Intra ass bss (\ a b -> let a2 = bmul a a in badd a2 b)
+  let b2pbs = imap2Intra ass bss (\ a b -> let b2 = bmul b b in badd b2 a) -- should be badd b2 b
+  let prods = imap2Intra a2pbs b2pbs (\ a2pb b2pb -> bmul a2pb b2pb)
+  in  imap3Intra ass bss prods (\ a b prod -> let ab = bmul a b in badd prod ab)
 
 -- ==
 -- entry: poly8192Q8
