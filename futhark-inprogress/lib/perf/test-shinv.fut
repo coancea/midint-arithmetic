@@ -83,13 +83,13 @@ def shinvWrap [m][q] (vs: [m][2*q]uint) (h: i32) : [m][2*q]uint =
 --  in  imap2Intra vss hs shinvWrap
 
 --
--- ==
+---- ==
 -- entry: shinv2048Q4
 -- "Shinv2048Q4" script input { mkShinvInpRep 32768 512 4 }
-entry shinv2048Q4 [m] (vss0: [m][512][4]u64) (hs: [m]i32) : [m][512][2*2]u64 =
-  #[unsafe]
-  let vss = vss0 :> [m][512][2*2]u64
-  in  imap2Intra vss hs shinvWrap
+--entry shinv2048Q4 [m] (vss0: [m][512][4]u64) (hs: [m]i32) : [m][512][2*2]u64 =
+--  #[unsafe]
+--  let vss = vss0 :> [m][512][2*2]u64
+--  in  imap2Intra vss hs shinvWrap
 
 
 --entry shinv2048Q8 (m: i64) : [m][256][2*4]u64 =
@@ -97,11 +97,26 @@ entry shinv2048Q4 [m] (vss0: [m][512][4]u64) (hs: [m]i32) : [m][512][2*2]u64 =
 --  let (vss, hs) = mkShinvInput m 256 (2*4)
 --  in  imap2Intra vss hs shinvWrap
 
--- ==
+---- ==
 -- entry: shinvDebug
 -- compiled input @ data-debug.in
 -- auto output
-entry shinvDebug [n] (_m: i64) (_q: i64) (vs0: [n][2048]u64) (hs: [n]i32) : [n][2048]u64 =
+--entry shinvDebug [n] (_m: i64) (_q: i64) (vs0: [n][2048]u64) (hs: [n]i32) : [n][2048]u64 =
+--  let vs = vs0 :> [n][256*(2*4)]u64
+--  let vs = opaque <| map unflatten vs
+--  let rs = opaque <| imap2Intra vs hs shinvWrap
+--  in  (map flatten rs) :> [n][2048]u64
+
+
+-- ==
+-- entry: shinvDebug
+-- compiled input @ data-div/data-shinv-1-2048-u64.in
+-- output @ data-div/data-shinv-1-2048-u64.out
+--
+-- compiled input @ data-div/data-shinv-1024-2048-u64.in
+-- output @ data-div/data-shinv-1024-2048-u64.out
+--
+entry shinvDebug [n] (vs0: [n][2048]u64) (hs: [n]i32) : [n][2048]u64 =
   let vs = vs0 :> [n][256*(2*4)]u64
   let vs = opaque <| map unflatten vs
   let rs = opaque <| imap2Intra vs hs shinvWrap
