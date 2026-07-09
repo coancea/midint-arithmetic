@@ -7,6 +7,8 @@ import "divSanityTest"
 ---                  AND IT VALIDATES, i.e., u == v * quo + rem
 ---------------------------------------------------------------------------
 
+entry mkShinvInput = mkShinvInput0
+
 -- ==
 -- entry: bdiv2048Q4
 -- "Bdiv2048Q4" script input { mkShinvInput 32768i64 512i64 4i64 }

@@ -1,5 +1,7 @@
 import "divSanityTest"
 
+entry mkShinvInput = mkShinvInput0
+
 -- ==
 -- entry: bdiv512Q4
 -- "Bdiv512Q4" script input { mkShinvInput 131072i64 128i64 4i64 }
