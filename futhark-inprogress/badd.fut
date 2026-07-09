@@ -29,7 +29,6 @@ let  two_cT     = 2u32     --2u8
 ---- prefix sum (scan) operator to propagate the curry:
 ---- format: last digit set      => overfolow
 ----         ante-last digit set => one unit away from overflowing   
--- let badd_op (c1 : u8) (c2: u8) : u8 =
 let carryOp (c1: cT) (c2: cT) =
   (c1 & c2 & 2) | (( (c1 & (c2 >> 1)) | c2) & 1)
   

@@ -50,7 +50,6 @@ let carrySegOp (c1: cT) (c2: cT) =
          in  ( res | ( (c1 | c2) & 4 ) )
 
 let baddRegGen [ipb][n][q] (aregs : [ipb*n][q]uint) (bregs : [ipb*n][q]uint) : ([ipb*n][q]uint, [ipb*n][1]cT) =
---  #[unsafe]
   let ff1 tid =
     let (areg, breg) = (aregs[tid], bregs[tid])
     let carry_acc = carryOpNE
@@ -78,7 +77,7 @@ let baddRegGen [ipb][n][q] (aregs : [ipb*n][q]uint) (bregs : [ipb*n][q]uint) : (
     let is_seg_start = tid % n == 0
     let carry = if is_seg_start then carryOpNE else carry_thds[tid-1]
     let rs' = #[scratch] replicate q zero_uint
-    let (rs', _) =
+    let (rs', carry) =
         loop (rs', carry) for i < q do        
           let vb = carry & 1 == 1  -- && cs[i] & 4 == 0 
           let rs'[i] = rs[i] + uint_bool vb

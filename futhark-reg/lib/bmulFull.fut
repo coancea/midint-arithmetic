@@ -62,70 +62,6 @@ def wrapperConv2ndHalf (Q: i64) (n: i32) (ash: []uint) (bsh: []uint) (tid: i32) 
   let lhcs1 = convolution2ndHalf Q n offset k2 ash bsh
   in  (lhcs0, lhcs1)
 
-
-def bmulSftFullRegsBad [IPB][M][Q] (h:i64) (As: [IPB*M][2*Q]uint) (Bs: [IPB*M][2*Q]uint)
-        : [IPB*M][2*Q]uint =
-  let Areg = #[glb2reg_only(1)] manifest As
-  let Breg = #[glb2reg_only(1)] manifest Bs
-  let Ash = cpReg2Shm Areg -- [2*Q] registers per thread
-  let Bsh = cpReg2Shm Breg -- [2*Q] registers per thread
-  --
-  let Hini = replicate (IPB*2) zero_uint
-  let (Lsh, Hsh, Hini1) = bmulShmQ M Q Hini Ash Bsh
-  let Hreg= cpShm2Reg Hsh
-  let Lreg= cpShm2Reg Lsh
-  --
-  let (Rreg1, ipb_carries) = baddRegGen Lreg Hreg
-  --
-  -- add the carry to Hini1
-  let fHini (Hacc: *acc ([IPB*2]uint)) (tid: i64) : acc ([IPB*2]uint) =
-    let carry = uint_bool ( ipb_carries[tid,0] & 1 == 1)
-    let instn = tid / M
-    in  if (tid+1) % M == 0
-        then write Hacc (2*instn+1) carry
-        else Hacc
-  let Hini1' = opaque <| reduce_by_index_stream Hini1 (+) zero_uint fHini (iota (IPB*M))
-  --
-  -- publish the partial result to shared memory
-  let shm = replicate ((IPB*M)*(2*Q)) zero_uint
-  let fShift1 (myacc: *acc ([(IPB*M)*(2*Q)]uint)) (tid: i64) : acc ([(IPB*M)*(2*Q)]uint) =
-    let instance = tid / M
-    let offset   = instance * (M*(2*Q)) 
-    let ltid     = tid % M in
-    loop myacc for q < 2*Q do
-      let ind = ltid*(2*Q) + q in
-      if h <= ind then write myacc (offset + ind - h) Rreg1[tid, q]
-                  else myacc
---      let myacc = if ind < h
---                  then write myacc (offset + M*(2*Q) - h + ind) Rreg2[tid, q]
---                  else myacc
---      in  myacc
-  let resShm = scatter_stream shm fShift1 (iota (IPB*M))
-  --
-  -- now do it again for the second half
-  let Ash = cpReg2Shm Areg -- [2*Q] registers per thread
-  let Bsh = cpReg2Shm Breg -- [2*Q] registers per thread
-  let (vec_lhcs0, vec_lhcs1) = unzip <| opaque <|
-       #[toregmem(1)] map (wrapperConv2ndHalf Q (i32.i64 M) Ash Bsh)
-       <| map i32.i64 <| iota (IPB*M)
-  let (Lsh, Hsh, _) = from4Reg2ShmQ Ash Bsh Hini1' (copy vec_lhcs0) (copy vec_lhcs1)
-  let Hreg= cpShm2Reg Hsh
-  let Lreg= cpShm2Reg Lsh
-  --
-  let Rreg2 = baddReg Lreg Hreg
-  --
-  -- publish the second part of the result to shared memory
-  let fShift2 (myacc: *acc ([(IPB*M)*(2*Q)]uint)) (tid: i64) : acc ([(IPB*M)*(2*Q)]uint) =
-    let instance = tid / M
-    let offset   = instance * (M*(2*Q)) 
-    let ltid     = tid % M in
-    loop myacc for q < 2*Q do
-      let ind = ltid*(2*Q) + q in
-      if ind < h then write myacc (offset + M*(2*Q) - h + ind) Rreg2[tid, q]
-                 else myacc
-  let resShm = scatter_stream resShm fShift2 (iota (IPB*M))
-  in  cpShm2Reg resShm
-
 def bmulSftFullRegs [IPB][M][Q] (h:i64) (As: [IPB*M][2*Q]uint) (Bs: [IPB*M][2*Q]uint)
         : [IPB*M][2*Q]uint =
   let Areg = #[glb2reg_only(1)] manifest As
@@ -179,25 +115,3 @@ def bmulSftFullRegs [IPB][M][Q] (h:i64) (As: [IPB*M][2*Q]uint) (Bs: [IPB*M][2*Q]
   let resShm = scatter_stream shm fShift (iota (IPB*M))
   in  cpShm2Reg resShm
 
-
---
---def div [IPB][M][Q] (h:i64) (Dreg: [IPB*M][2*Q]uint) (Vreg: [IPB*M][2*Q]uint) : ([IPB*M][2*Q]uint) =
---  let (Rreg1, Rreg2) = bmulRegsFull Dreg Vreg
---  --
---  let shm = replicate ((IPB*M)*(2*Q)) zero_uint
---  let fShift (myacc: *acc ([(IPB*M)*(2*Q)]uint)) (tid: i64) : acc ([(IPB*M)*(2*Q)]uint) =
---    let instance = tid / M
---    let offset   = instance * (M*(2*Q)) 
---    let ltid     = tid % M in
---    loop myacc for q < 2*Q do
---      let ind = ltid*(2*Q) + q
---      let myacc = if h <= ind
---                  then write myacc (offset + ind - h) Rreg1[tid, q]
---                  else myacc
---      let myacc = if ind < h
---                  then write myacc (offset + M*(2*Q) - h + ind) Rreg2[tid, q]
---                  else myacc
---      in  myacc
---  let resShm = scatter_stream shm fShift (iota (IPB*M))
---  in  cpShm2Reg resShm
---
