@@ -39,10 +39,7 @@ def mkRandBIntPart (max_prec: i32) (m: i64) (q2: i64) rng_state =
     let arr[i] = u64.u32 v
     in  (rng_state, arr)
 
----- ==
--- entry: mkShinvInput
--- compiled input { 32768i64 256i64 8i64 }
-entry mkShinvInput (num_instances: i64) (m: i64) (q2: i64)
+def mkShinvInput0 (num_instances: i64) (m: i64) (q2: i64)
                  : ( [num_instances][m][q2]u64
                    , [num_instances][m][q2]u64
                    ) =
