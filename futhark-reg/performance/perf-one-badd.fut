@@ -24,7 +24,8 @@ entry oneAdd4096 [m] (ass0: [m][1024][4]u64) (bss0: [m][1024][4]u64) : [m][1*102
 -- ==
 -- entry: oneAdd2048Q8
 -- compiled random input { [32768][256][8]u64  [32768][256][8]u64 } auto output
-entry oneAdd2048Q8 [m] (ass0: [m][256][8]u64) (bss0: [m][256][8]u64) : [m][1*256][8]u64 = #[unsafe]
+entry oneAdd2048Q8 [m] (ass0: [m][256][8]u64) (bss0: [m][256][8]u64) : [m][1*256][8]u64 =
+  #[unsafe]
   let ass = ass0 :> [m][(1*256)][8]u64
   let bss = bss0 :> [m][(1*256)][8]u64
   in  imap2Intra ass bss badd
@@ -32,7 +33,8 @@ entry oneAdd2048Q8 [m] (ass0: [m][256][8]u64) (bss0: [m][256][8]u64) : [m][1*256
 -- ==
 -- entry: oneAdd2048
 -- compiled random input { [32768][512][4]u64  [32768][512][4]u64 } auto output
-entry oneAdd2048 [m] (ass0: [m][512][4]u64) (bss0: [m][512][4]u64) : [m][1*512][4]u64 = #[unsafe]
+entry oneAdd2048 [m] (ass0: [m][512][4]u64) (bss0: [m][512][4]u64) : [m][1*512][4]u64 =
+  #[unsafe]
   let ass = ass0 :> [m][1*512][4]u64
   let bss = bss0 :> [m][1*512][4]u64
   in  imap2Intra ass bss badd
