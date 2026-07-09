@@ -3,6 +3,18 @@ import "../bmul"
 
 --
 -- ==
+-- entry: oneMultiply8192Q8
+-- compiled random input { [8192][1024][8]u64  [8192][1024][8]u64 }
+entry oneMultiply8192Q8 [m] (ass0: [m][1024][8]u64) (bss0: [m][1024][8]u64) : [m][1*1024][2*4]u64 =
+  #[unsafe]
+  let ass = ass0 :> [m][1*1024][2*4]u64
+  let bss = bss0 :> [m][1*1024][2*4]u64
+  let rss = imap2Intra ass bss bmul
+  in  rss
+
+
+--
+-- ==
 -- entry: oneMultiply4096Q8
 -- compiled random input { [16384][512][8]u64  [16384][512][8]u64 }
 entry oneMultiply4096Q8 [m] (ass0: [m][512][8]u64) (bss0: [m][512][8]u64) : [m][1*512][2*4]u64 =

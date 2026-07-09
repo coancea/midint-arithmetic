@@ -43,13 +43,13 @@ def shinvWrap [m][q] (vs: [m][2*q]uint) (h: i32) : [m][2*q]uint =
   in  shinv vreg h
 
 --
----- ==
--- entry: shinv4096Q8
--- "Shinv4096Q8" script input { mkShinvInput 16384 512 8 }
---entry shinv4096Q8 [m] (vss0: [m][512][8]u64) (hs: [m]i32) : [m][512][2*4]u64 =
---  #[unsafe]
---  let vss = vss0 :> [m][512][2*4]u64
---  in  imap2Intra vss hs shinvWrap
+-- ==
+-- entry: shinv8192Q8
+-- "Shinv8192Q8" script input { mkShinvInput 8192i64 1024 8 }
+entry shinv8192Q8 [m] (vss0: [m][1024][8]u64) (hs: [m]i32) : [m][1024][2*4]u64 =
+  #[unsafe]
+  let vss = vss0 :> [m][1024][2*4]u64
+  in  imap2Intra vss hs shinvWrap
 
 -- ==
 -- entry: shinv4096Q4
