@@ -1,0 +1,334 @@
+---------------------------
+--- BADD CUDA PROTOTYPE ---
+---------------------------
+
+[xmf768@hendrixfut03fl cuda]$ make
+./big-num-our 134217728
+Our Addition of 262144-bit Big-Numbers (base u64) runs 16384 instances in: 1539 microsecs, GB/sec: 1046.53, Mil-Instances/sec: 10.65
+Our SIX Additions of 262144-bit Big-Numbers (base u64) runs 16384 instances in: 2801 microsecs, GB/sec: 575.01, Mil-Instances/sec: 5.85
+VALID RESULT!
+Our Addition of 131072-bit Big-Numbers (base u64) runs 32768 instances in: 1332 microsecs, GB/sec: 1209.17, Mil-Instances/sec: 24.60
+Our SIX Additions of 131072-bit Big-Numbers (base u64) runs 32768 instances in: 1949 microsecs, GB/sec: 826.38, Mil-Instances/sec: 16.81
+VALID RESULT!
+Our Addition of 65536-bit Big-Numbers (base u64) runs 65536 instances in: 1266 microsecs, GB/sec: 1272.21, Mil-Instances/sec: 51.77
+Our SIX Additions of 65536-bit Big-Numbers (base u64) runs 65536 instances in: 1871 microsecs, GB/sec: 860.83, Mil-Instances/sec: 35.03
+VALID RESULT!
+Our Addition of 32768-bit Big-Numbers (base u64) runs 131072 instances in: 1237 microsecs, GB/sec: 1302.03, Mil-Instances/sec: 105.96
+Our SIX Additions of 32768-bit Big-Numbers (base u64) runs 131072 instances in: 1900 microsecs, GB/sec: 847.69, Mil-Instances/sec: 68.99
+VALID RESULT!
+Our Addition of 16384-bit Big-Numbers (base u64) runs 262144 instances in: 1257 microsecs, GB/sec: 1281.31, Mil-Instances/sec: 208.55
+Our SIX Additions of 16384-bit Big-Numbers (base u64) runs 262144 instances in: 1841 microsecs, GB/sec: 874.86, Mil-Instances/sec: 142.39
+VALID RESULT!
+Our Addition of 8192-bit Big-Numbers (base u64) runs 524288 instances in: 1242 microsecs, GB/sec: 1296.79, Mil-Instances/sec: 422.13
+Our SIX Additions of 8192-bit Big-Numbers (base u64) runs 524288 instances in: 1829 microsecs, GB/sec: 880.60, Mil-Instances/sec: 286.65
+VALID RESULT!
+Our Addition of 4096-bit Big-Numbers (base u64) runs 1048576 instances in: 1266 microsecs, GB/sec: 1272.21, Mil-Instances/sec: 828.26
+Our SIX Additions of 4096-bit Big-Numbers (base u64) runs 1048576 instances in: 1827 microsecs, GB/sec: 881.56, Mil-Instances/sec: 573.93
+VALID RESULT!
+Our Addition of 2048-bit Big-Numbers (base u64) runs 2097152 instances in: 1269 microsecs, GB/sec: 1269.20, Mil-Instances/sec: 1652.60
+Our SIX Additions of 2048-bit Big-Numbers (base u64) runs 2097152 instances in: 1818 microsecs, GB/sec: 885.93, Mil-Instances/sec: 1153.55
+VALID RESULT!
+Our Addition of 1024-bit Big-Numbers (base u64) runs 4194304 instances in: 1268 microsecs, GB/sec: 1270.20, Mil-Instances/sec: 3307.81
+Our SIX Additions of 1024-bit Big-Numbers (base u64) runs 4194304 instances in: 1828 microsecs, GB/sec: 881.08, Mil-Instances/sec: 2294.48
+VALID RESULT!
+Our Addition of 512-bit Big-Numbers (base u64) runs 8388608 instances in: 1206 microsecs, GB/sec: 1335.50, Mil-Instances/sec: 6955.73
+Our SIX Additions of 512-bit Big-Numbers (base u64) runs 8388608 instances in: 2060 microsecs, GB/sec: 781.85, Mil-Instances/sec: 4072.14
+VALID RESULT!
+
+---------------------------
+--- BADD FUTHARK ---
+---------------------------
+
+[xmf768@hendrixfut03fl futhark-inprogress]$ futhark bench --backend=cuda perf-one-badd.fut
+Compiling perf-one-badd.fut...
+Reporting arithmetic mean runtime of at least 10 runs for each dataset (min 0.5s).
+More runs automatically performed for up to 300s to ensure accurate measurement.
+
+perf-one-badd.fut:oneAdd4096Q8 (no tuning file):
+[16384][512][8]u64 [16384][512][8]u64:         1236μs (95% CI: [    1230.0,     1267.8])
+
+perf-one-badd.fut:oneAdd4096 (no tuning file):
+[16384][1024][4]u64 [16384][1024][4]u64:       1355μs (95% CI: [    1353.9,     1355.6])
+
+perf-one-badd.fut:oneAdd2048Q8 (no tuning file):
+[32768][256][8]u64 [32768][256][8]u64:         1195μs (95% CI: [    1194.4,     1195.6])
+
+perf-one-badd.fut:oneAdd2048 (no tuning file):
+[32768][512][4]u64 [32768][512][4]u64:         1224μs (95% CI: [    1223.5,     1224.0])
+
+perf-one-badd.fut:oneAdd1024 (no tuning file):
+[65536][256][4]u64 [65536][256][4]u64:         1204μs (95% CI: [    1203.9,     1204.5])
+
+perf-one-badd.fut:oneAdd512 (no tuning file):
+[131072][128][4]u64 [131072][128][4]u64:       1201μs (95% CI: [    1200.9,     1201.6])
+
+perf-one-badd.fut:oneAdd256 (no tuning file):
+[262144][64][4]u64 [262144][64][4]u64:         1200μs (95% CI: [    1199.7,     1200.5])
+
+perf-one-badd.fut:oneAdd128 (no tuning file):
+[262144][64][4]u64 [262144][64][4]u64:         1201μs (95% CI: [    1200.3,     1201.1])
+
+perf-one-badd.fut:oneAdd64 (no tuning file):
+[262144][64][4]u64 [262144][64][4]u64:         1205μs (95% CI: [    1204.9,     1205.7])
+
+===============================
+=========== six adds ==========
+===============================
+
+Both Q4 and Q8 correspond to THE NEW BADD in lib/perf
+
+WITH Q=8
+
+[xmf768@hendrixfut03fl perf]$ futhark bench --backend=cuda --pass-option=--device="#1" perf-six-badd-Q8.fut 
+Compiling perf-six-badd-Q8.fut...
+Reporting arithmetic mean runtime of at least 10 runs for each dataset (min 0.5s).
+More runs automatically performed for up to 300s to ensure accurate measurement.
+
+perf-six-badd-Q8.fut:sixAdds4096 (no tuning file):
+[16384][512][8]u64 [16384][512][8]u64:       2920μs (95% CI: [    2919.2,     2923.8])
+
+perf-six-badd-Q8.fut:sixAdds2048 (no tuning file):
+[32768][256][8]u64 [32768][256][8]u64:       2487μs (95% CI: [    2486.5,     2487.2])
+
+perf-six-badd-Q8.fut:sixAdds1024 (no tuning file):
+[65536][128][8]u64 [65536][128][8]u64:       2323μs (95% CI: [    2322.7,     2323.4])
+
+perf-six-badd-Q8.fut:sixAdds512 (no tuning file):
+[131072][64][8]u64 [131072][64][8]u64:       2285μs (95% CI: [    2282.3,     2286.5])
+
+perf-six-badd-Q8.fut:sixAdds256 (no tuning file):
+[131072][64][8]u64 [131072][64][8]u64:       2289μs (95% CI: [    2286.7,     2291.7])
+
+perf-six-badd-Q8.fut:sixAdds128 (no tuning file):
+[131072][64][8]u64 [131072][64][8]u64:       2285μs (95% CI: [    2282.9,     2287.6])
+
+perf-six-badd-Q8.fut:sixAdds64 (no tuning file):
+[131072][64][8]u64 [131072][64][8]u64:       2264μs (95% CI: [    2262.2,     2266.4])
+
+===
+
+WITH Q=4
+perf-six-badd.fut:sixAdds4096 (no tuning file):
+[16384][1024][4]u64 [16384][1024][4]u64:       3504μs (95% CI: [    3501.5,     3505.1])
+
+perf-six-badd.fut:sixAdds2048 (no tuning file):
+[32768][512][4]u64 [32768][512][4]u64:         4314μs (95% CI: [    4313.3,     4314.6])
+
+perf-six-badd.fut:sixAdds1024 (no tuning file):
+[65536][256][4]u64 [65536][256][4]u64:         2974μs (95% CI: [    2972.9,     2975.4])
+
+perf-six-badd.fut:sixAdds512 (no tuning file):
+[131072][128][4]u64 [131072][128][4]u64:       2776μs (95% CI: [    2774.6,     2777.4])
+
+perf-six-badd.fut:sixAdds256 (no tuning file):
+[262144][64][4]u64 [262144][64][4]u64:         2762μs (95% CI: [    2758.2,     2764.4])
+
+perf-six-badd.fut:sixAdds128 (no tuning file):
+[262144][64][4]u64 [262144][64][4]u64:         2757μs (95% CI: [    2753.9,     2759.3])
+
+perf-six-badd.fut:sixAdds64 (no tuning file):
+[262144][64][4]u64 [262144][64][4]u64:         2762μs (95% CI: [    2757.6,     2765.5])
+
+---------------------------
+--- BMUL CUDA PROTOTYPE ---
+---------------------------
+
+[xmf768@hendrixfut03fl cuda]$ make
+nvcc -O3 -arch=sm_80 main.cu -o big-num-our -lgmp
+ptxas warning : Value of minnctapersm for entry _Z10polyFttKerI10FftPrime32Lj16ELj1EEvjNT_6uint_tEPS2_S3_PNS1_6uhlf_tES5_S5_ is out of range. minnctapersm will be ignored
+ptxas warning : Value of minnctapersm for entry _Z7bmulFFTI10FftPrime32Lj16ELj1EEvjNT_6uint_tEPS2_S3_PNS1_6uhlf_tES5_S3_ is out of range. minnctapersm will be ignored
+./big-num-our 134217728
+N^2 Multiplication of 262144-bits Big-Numbers (in base = 64 bits) runs 16384 instances in: 207313 microsecs, Gu32ops/sec: 2524.92, Mil-Instances/sec: 0.08
+Our Polynomial of 262144-bits Big-Numbers (in base = 64 bits) runs 16384 instances in: 855479 microsecs, Gu32ops/sec: 2447.51, Mil-Instances/sec: 0.02
+VALID RESULT!
+N^2 Multiplication of 131072-bits Big-Numbers (in base = 64 bits) runs 32768 instances in: 105468 microsecs, Gu32ops/sec: 4581.33, Mil-Instances/sec: 0.31
+Our Polynomial of 131072-bits Big-Numbers (in base = 64 bits) runs 32768 instances in: 435015 microsecs, Gu32ops/sec: 4442.92, Mil-Instances/sec: 0.08
+VALID RESULT!
+N^2 Multiplication of 65536-bits Big-Numbers (in base = 64 bits) runs 65536 instances in: 56976 microsecs, Gu32ops/sec: 7773.77, Mil-Instances/sec: 1.15
+Our Polynomial of 65536-bits Big-Numbers (in base = 64 bits) runs 65536 instances in: 225068 microsecs, Gu32ops/sec: 7871.73, Mil-Instances/sec: 0.29
+VALID RESULT!
+N^2 Multiplication of 32768-bits Big-Numbers (in base = 64 bits) runs 131072 instances in: 30619 microsecs, Gu32ops/sec: 13150.44, Mil-Instances/sec: 4.28
+Our Polynomial of 32768-bits Big-Numbers (in base = 64 bits) runs 131072 instances in: 119647 microsecs, Gu32ops/sec: 13461.37, Mil-Instances/sec: 1.10
+VALID RESULT!
+N^2 Multiplication of 16384-bits Big-Numbers (in base = 64 bits) runs 262144 instances in: 19285 microsecs, Gu32ops/sec: 18791.18, Mil-Instances/sec: 13.59
+Our Polynomial of 16384-bits Big-Numbers (in base = 64 bits) runs 262144 instances in: 66860 microsecs, Gu32ops/sec: 21680.40, Mil-Instances/sec: 3.92
+VALID RESULT!
+N^2 Multiplication of 8192-bits Big-Numbers (in base = 64 bits) runs 524288 instances in: 12367 microsecs, Gu32ops/sec: 26046.94, Mil-Instances/sec: 42.39
+Our Polynomial of 8192-bits Big-Numbers (in base = 64 bits) runs 524288 instances in: 40712 microsecs, Gu32ops/sec: 31648.90, Mil-Instances/sec: 12.88
+VALID RESULT!
+N^2 Multiplication of 4096-bits Big-Numbers (in base = 64 bits) runs 1048576 instances in: 8916 microsecs, Gu32ops/sec: 31612.52, Mil-Instances/sec: 117.61
+Our Polynomial of 4096-bits Big-Numbers (in base = 64 bits) runs 1048576 instances in: 21957 microsecs, Gu32ops/sec: 51347.13, Mil-Instances/sec: 47.76
+VALID RESULT!
+
+//N^2 Multiplication of 2048-bits Big-Numbers (in base = 64 bits) runs 2097152 instances in: 4970 microsecs, Gu32ops/sec: 48610.04, Mil-Instances/sec: 421.96
+//Our Polynomial of 2048-bits Big-Numbers (in base = 64 bits) runs 2097152 instances in: 14003 microsecs, Gu32ops/sec: 69011.47, Mil-Instances/sec: 149.76
+//VALID RESULT!
+//N^2 Multiplication of 1024-bits Big-Numbers (in base = 64 bits) runs 4194304 instances in: 4332 microsecs, Gu32ops/sec: 46474.28, Mil-Instances/sec: 968.21
+//Our Polynomial of 1024-bits Big-Numbers (in base = 64 bits) runs 4194304 instances in: 12050 microsecs, Gu32ops/sec: 66830.40, Mil-Instances/sec: 348.08
+//VALID RESULT!
+//N^2 Multiplication of 512-bits Big-Numbers (in base = 64 bits) runs 8388608 instances in: 3689 microsecs, Gu32ops/sec: 43659.87, Mil-Instances/sec: 2273.95
+//Our Polynomial of 512-bits Big-Numbers (in base = 64 bits) runs 8388608 instances in: 7755 microsecs, Gu32ops/sec: 83074.80, Mil-Instances/sec: 1081.70
+//VALID RESULT!
+
+----------------------------------------------------------------------
+--- BMUL FUTHARK: from 1.38x to 0.96x the runtime of the prototype ---
+----------------------------------------------------------------------
+
+[xmf768@hendrixfut03fl futhark-inprogress]$ futhark bench --backend=cuda perf-mul.fut -r 2
+Compiling perf-mul.fut...
+Reporting arithmetic mean runtime of at least 2 runs for each dataset (min 0.5s).
+More runs automatically performed for up to 300s to ensure accurate measurement.
+
+perf-mul.fut:oneMultiply8192Q8 (no tuning file):
+[8192][1024][8]u64 [8192][1024][8]u64:       567574μs (95% CI: [  567233.5,   568036.1])
+
+perf-mul.fut:oneMultiply4096 (no tuning file):
+[16384][1024][4]u64 [16384][1024][4]u64:     285302μs (95% CI: [  285107.0,   285301.5])
+
+perf-mul.fut:oneMultiply2048 (no tuning file):
+[32768][512][4]u64 [32768][512][4]u64:       144534μs (95% CI: [  143660.0,   144844.2])
+
+perf-mul.fut:oneMultiply1024 (no tuning file):
+[65536][256][4]u64 [65536][256][4]u64:        74807μs (95% CI: [   74245.9,    75000.6])
+
+perf-mul.fut:oneMultiply512 (no tuning file):
+[131072][128][4]u64 [131072][128][4]u64:      39900μs (95% CI: [   39683.8,    40007.8])
+
+perf-mul.fut:oneMultiply256 (no tuning file):
+[262144][64][4]u64 [262144][64][4]u64:        22313μs (95% CI: [   22269.3,    22357.3])
+
+perf-mul.fut:oneMultiply128 (no tuning file):
+[262144][64][4]u64 [262144][64][4]u64:        13578μs (95% CI: [   13559.1,    13594.3])
+
+perf-mul.fut:oneMultiply64 (no tuning file):
+[262144][64][4]u64 [262144][64][4]u64:         7332μs (95% CI: [    7310.8,     7349.3])
+
+====================================================
+== POLY: 1.34 to 1.31 slowdown vs CUDA prototype ===
+====================================================
+
+futhark dataset -b -g [8192][1024][8]u64 -g [8192][1024][8]u64 | ./perf-poly-8192Q8 -n -t /dev/stderr -r 3 --entry=poly8192Q8
+2284759
+2292812
+2296069
+
+
+perf-poly-8192Q8.fut:poly8192Q8 (no tuning file):
+[8192][1024][8]u64 [8192][1024][8]u64:    2272129μs (95% CI: [ 2268052.6,  2275818.1])
+
+
+WITH POLY-UF:
+[xmf768@hendrixfut03fl futhark-inprogress]$ futhark dataset -b -g [16384][1024][4]u64 -g [16384][1024][4]u64 | ./perf-poly-4096 -n -t /dev/stderr -r 3 --entry=poly4096
+1146044
+1147966
+1149040
+
+perf-poly-2048.fut:poly2048 (no tuning file):8192*2
+
+[32768][512][4]u64 [32768][512][4]u64:     587760μs (95% CI: [  587114.0,   587760.5])
+
+perf-poly-1024.fut:poly1024 (no tuning file):
+[65536][256][4]u64 [65536][256][4]u64:     299845μs (95% CI: [  299623.0,   299845.0])
+
+perf-poly-512.fut:poly512 (no tuning file):
+[131072][128][4]u64 [131072][128][4]u64:     160098μs (95% CI: [  159467.0,   160348.0])
+
+perf-poly-256.fut:poly256 (no tuning file):
+[262144][64][4]u64 [262144][64][4]u64:      90005μs (95% CI: [   89523.0,    90337.7])
+
+perf-poly-128.fut:poly128 (no tuning file):
+[262144][64][4]u64 [262144][64][4]u64:      55131μs (95% CI: [   54837.7,    55369.6])
+
+perf-poly-64.fut:poly64 (no tuning file):
+[262144][64][4]u64 [262144][64][4]u64:      29844μs (95% CI: [   29644.6,    29931.8])
+
+=================================
+=== FUTHARK SHINV
+=================================
+
+[xmf768@hendrixfut03fl perf]$ futhark bench --backend=cuda perf-shinv.fut -r 3
+Compiling perf-shinv.fut...
+Reporting arithmetic mean runtime of at least 3 runs for each dataset (min 0.5s).
+More runs automatically performed for up to 300s to ensure accurate measurement.
+
+perf-shinv.fut:shinv8192Q8 (no tuning file):
+Shinv8192Q8:    1455450μs (95% CI: [ 1455382.1,  1455525.7])
+
+perf-shinv.fut:shinv4096Q4 (no tuning file):
+Shinv4096Q4:     785828μs (95% CI: [  785781.0,   785856.3])
+
+perf-shinv.fut:shinv2048Q4 (no tuning file):
+Shinv2048Q4:     504216μs (95% CI: [  504200.0,   504227.0])
+
+perf-shinv.fut:shinv1024Q4 (no tuning file):
+Shinv1024Q4:     379308μs (95% CI: [  379300.0,   379314.0])
+
+perf-shinv.fut:shinv512Q4 (no tuning file):
+Shinv512Q4:      181197μs (95% CI: [  181182.0,   181208.3])
+
+perf-shinv.fut:shinv256Q4 (no tuning file):
+Shinv256Q4:      145612μs (95% CI: [  145555.2,   145647.5])
+
+perf-shinv.fut:shinv128Q4 (no tuning file):
+Shinv128Q4:      124439μs (95% CI: [  124409.8,   124469.4])
+
+=================================
+=== FUTHARK DIV
+=================================
+
+[xmf768@hendrixfut03fl perf]$ futhark bench --backend=cuda perf-div.fut -r 3
+Compiling perf-div.fut...
+Reporting arithmetic mean runtime of at least 3 runs for each dataset (min 0.5s).
+More runs automatically performed for up to 300s to ensure accurate measurement.
+
+perf-div.fut:bdiv8192Q8 (no tuning file):
+Bdiv8192Q8:    3166362μs (95% CI: [ 3166058.2,  3166569.1])
+
+perf-div.fut:bdiv4096Q4 (no tuning file):
+Bdiv4096Q4:    1626865μs (95% CI: [ 1626773.0,  1626953.3])
+
+perf-div.fut:bdiv2048Q4 (no tuning file):
+Bdiv2048Q4:     962004μs (95% CI: [  961932.0,   962054.7])
+
+perf-div.fut:bdiv1024Q8 (no tuning file):
+Bdiv1024Q8:     606002μs (95% CI: [  605369.4,   606267.8])
+
+--perf-div.fut:bdiv1024Q4 (no tuning file):
+--Bdiv1024Q4:     696725μs (95% CI: [  696664.0,   696756.7])
+
+perf-div.fut:bdiv512Q4 (no tuning file):
+Bdiv512Q4:      312166μs (95% CI: [  312115.0,   312203.3])
+
+perf-div.fut:bdiv256Q4 (no tuning file):
+Bdiv256Q4:      278741μs (95% CI: [  278591.0,   278849.0])
+
+perf-div.fut:bdiv128Q4 (no tuning file):
+Bdiv128Q4:      254532μs (95% CI: [  254396.0,   254614.3])
+
+=====================================
+=====================================
+=== Students' Prototype CUDA BDIV ===
+=====================================
+=====================================
+
+[xmf768@hendrixfut03fl cuda]$ make
+nvcc -O3 -arch=sm_80 main.cu -lgmp -diag-suppress 63 -o main.exe && ./main.exe 134217728
+Division on 262144-bit Big-Numbers (base u64) runs 16384 instances in: 1404255 microsecs, Gu32ops/sec: 2348.96, Mil-Instances/sec: 0.01
+VALID RESULT!
+Division on 131072-bit Big-Numbers (base u64) runs 32768 instances in: 702138 microsecs, Gu32ops/sec: 2348.92, Mil-Instances/sec: 0.05
+VALID RESULT!
+Division on 65536-bit Big-Numbers (base u64) runs 65536 instances in: 395165 microsecs, Gu32ops/sec: 2086.81, Mil-Instances/sec: 0.17
+VALID RESULT!
+Division on 32768-bit Big-Numbers (base u64) runs 131072 instances in: 297886 microsecs, Gu32ops/sec: 1384.14, Mil-Instances/sec: 0.44
+VALID RESULT!
+Division on 16384-bit Big-Numbers (base u64) runs 262144 instances in: 284195 microsecs, Gu32ops/sec: 725.41, Mil-Instances/sec: 0.92
+VALID RESULT!
+Division on 8192-bit Big-Numbers (base u64) runs 524288 instances in: 191229 microsecs, Gu32ops/sec: 539.04, Mil-Instances/sec: 2.74
+VALID RESULT!
+Division on 4096-bit Big-Numbers (base u64) runs 1048576 instances in: 316624 microsecs, Gu32ops/sec: 162.78, Mil-Instances/sec: 3.31
+VALID RESULT!
+Division on 2048-bit Big-Numbers (base u64) runs 2097152 instances in: 457525 microsecs, Gu32ops/sec: 56.32, Mil-Instances/sec: 4.58
+VALID RESULT!
+Division on 1024-bit Big-Numbers (base u64) runs 4194304 instances in: 757021 microsecs, Gu32ops/sec: 17.02, Mil-Instances/sec: 5.54
+VALID RESULT!
+
