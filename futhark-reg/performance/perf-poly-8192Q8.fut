@@ -1,5 +1,6 @@
-import "badd"
-import "classic-mul"
+import "../lib/types"
+import "../lib/badd"
+import "../lib/bmul"
 
 def poly [m][ipb][n][q] (ass: [m][ipb*n][2*q]u64) (bss: [m][ipb*n][2*q]u64) : [m][ipb*n][2*q]u64 = 
   #[unsafe]
