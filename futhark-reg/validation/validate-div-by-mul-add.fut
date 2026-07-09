@@ -1,3 +1,10 @@
+----------------------------------------------------
+--- This sanity check tests that if `(quo, rem)` ---
+---   is the result of dividing `uss` with `vss` ---
+---   then it holds that:                        ---
+---       uss = quo * vss + rem                  ---
+----------------------------------------------------
+
 import "../performance/lib/github.com/diku-dk/cpprandom/random"
 import "../lib/types"
 import "../lib/badd"
