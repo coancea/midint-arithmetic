@@ -12,7 +12,7 @@
 
   ** In addition to this we perform sanity tests that do not require storing datasets. For example, `sanity-div-xxx.fut` performs the division `(q,r) = u / v` and checks that `u == q * v + r`, for a large batch of integers of precision `[xxx]u64`. Similarly, [validation/validate-sub-add-inv.fut](validation/validate-sub-add-inv.fut) performs `a + b - b` and checks that the result equals `a`.
 
-* Folder [performance](performance) contains the scripts for profiling performance. The runtimes for various experiments executed on an A100---including the CUDA implementation, Futhaark with and without support for mapping intermediate arrays in register memory, and the Ninja Futhark version---are backed up in files [A100-RegFuthark-Cuda.txt](performance/A100-RegFuthark-Cuda.txt), [A100-ShmFuthark](performance/A100-ShmFuthark), [A100-NinjaFuthark](performance/A100-NinjaFuthark). For most parts, you can run the tests as below and the runtime in microseconds will be reported.
+* Folder [performance](performance) contains the scripts for profiling performance. The runtimes for various experiments executed on an A100---including the CUDA implementation, Futhaark with and without support for mapping intermediate arrays in register memory, and the Ninja Futhark version---are backed up in files [A100-RegFuthark-Cuda.txt](performance/A100-RegFuthark-Cuda.txt), [A100-ShmFuthark](performance/A100-ShmFuthark.txt), [A100-NinjaFuthark](performance/A100-NinjaFuthark.txt). For most parts, you can run the tests as below and the runtime in microseconds will be reported.
 
 ```
 futhark bench --backend=cuda name-of-file.fut
