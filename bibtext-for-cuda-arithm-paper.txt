@@ -1,0 +1,18 @@
+@Inbook{Oancea2026,
+author="Oancea, Cosmin E.
+and Watt, Stephen M.",
+editor="Orchard, Dominic
+and Petricek, Tomas
+and Singer, Jeremy",
+title="GPU Implementations for Midsize Integer Addition and Multiplication",
+bookTitle="Languages, Compilers, Analysis - From Beautiful Theory to Useful Practice: Essays Dedicated to Alan Mycroft on the Occasion of His Retirement",
+year="2026",
+publisher="Springer Nature Switzerland",
+address="Cham",
+pages="51--79",
+abstract="This paper explores practical aspects of using a high-level functional language for GPU-based arithmetic on ``midsize'' integers. By this we mean integers of up to about a quarter million bits, which is sufficient for most practical purposes. The goal is to understand whether it is possible to support efficient nested-parallel programs with a small, flexible code base. We report on GPU implementations for addition and multiplication of integers that fit in one cuda block, thus leveraging temporal reuse from scratchpad memories. Our key contribution resides in the simplicity of the proposed solutions: We recognize that addition is a straightforward application of scan, which is known to allow efficient GPU implementation. For quadratic multiplication we employ a simple work-partitioning strategy that offers good temporal locality. For FFT multiplication, we efficiently map the computation in the domain of integral fields by finding ``good'' primes that enable almost-full utilization of machine words. In comparison, related work uses complex tiling strategies---which feel too big a hammer for the job---or uses the computational domain of reals, which may degrade the magnitude of the base in which the computation is carried. We evaluate the performance in comparison to the state-of-the-art cgbn library, authored by NvidiaLab, and report that our cuda prototype outperforms cgbn for integer sizes higher than 32K bits, while offering comparable performance for smaller sizes. Moreover, we are, to our knowledge, the first to report that FFT multiplication outperforms the classical one on the larger sizes that still fit in a cuda block. Finally, we examine Futhark's strengths and weaknesses for efficiently supporting such computations and find out that the significant overheads and scalability issues of the Futhark implementation are mainly caused by the absence of a compiler pass aimed at efficient sequentialization of excess parallelism.",
+isbn="978-3-032-08187-2",
+doi="10.1007/978-3-032-08187-2_4",
+url="https://doi.org/10.1007/978-3-032-08187-2_4"
+}
+
