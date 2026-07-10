@@ -4,13 +4,9 @@
 
 * (1) Cosmin E. Oancea and Stephen M. Watt, "GPU Implementations for Midsize Integer Addition and Multiplication", 2025, [bibtex](bibtext-for-cuda-arithm-paper.txt), also [available on arXiv](https://arxiv.org/abs/2405.14642)
 
-* (2) Cosmin E. Oancea and Stephen M. Watt, "High-Level Big Integer Arithmetic in Futhark for GPUs", submitted to SYNASC, 2025, preprint available here(Futhark_Arithmetic_SYNASC.pdf)
+* (2) Cosmin E. Oancea and Stephen M. Watt, "High-Level Big Integer Arithmetic in Futhark for GPUs", submitted to SYNASC, 2025, preprint available [here](Futhark_Arithmetic_SYNASC.pdf)
 
 Errata for (1): The paper incorrectly states that the prime fields for FFT multiplication use `15` out of the `16` bits and `31` out of `32` bits of the corresponding `uint` for *PrimeField32* and *PrimeField64*, respectively. This is incorrect because it does not considers the precision. We have amended the implementation, which validates now, to use `10` out of `16` bits and `25` out of `32` bits of the corresponding `uint` for *PrimeField32* and *PrimeField64*, respectively. This does not changes the overall story: FFT multiplication offers significant performance gains in comparison to classical/quadratic multiplication. The reported runtimes are still correct, except that the precision of the corresponding integers should be accordingly amended by `62.5%` and `78.125%` for *PrimeField32* and *PrimeField64*, respectively. For example, *PrimeField64* allows maximal precision of some `410000` bits instead of half a million. In principle, one can use more bits as the precision decreases, but we have not fine tuned it.
-
-62.5% 78.125%
-
-PrimeField32
 
 ### Code structure
 
