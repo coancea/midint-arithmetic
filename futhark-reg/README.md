@@ -1,4 +1,4 @@
-# Futhark implementations for addition, classical multiplication and division
+# Addition, Classical Multiplication and Division in Futhark
 
 * The code implementing said operations is avalidable in folder [lib](lib).
 
