@@ -1,3 +1,4 @@
+#include<algorithm>
 #include "helper.h"
 
 //#define WITH_INT_128 1
@@ -13,7 +14,7 @@ using namespace std;
 
 #define WITH_VALIDATION 1
 
-const size_t MAX_SHM_SIZE = 98304;
+const size_t MAX_SHM_SIZE = 163840; // 98304
 
 
 template<int m, int nz>
@@ -242,7 +243,7 @@ void gpuMultiply( int num_instances
     cudaMemcpy(d_bs, h_bs, mem_size_nums, cudaMemcpyHostToDevice);
     
     // 3. kernel dimensions; q must be 4; seq-factor = 2*q
-    const uint32_t q    = 4;     // 4
+    const uint32_t q    = (m <= 4096) ? 4 : 8;     // 4
     const uint32_t Bprf = 256; //256;
     //const uint32_t Bmax = 1024;
 #if 1
@@ -256,7 +257,7 @@ void gpuMultiply( int num_instances
     const uint32_t ipb = (B + m/q - 1) / (m/q);
 #endif
 
-    assert( (q % 2 == 0) && (m_lft % q == 0) && (m_lft >= q ) );
+    assert( (q % 2 == 0) && (m_lft % q == 0) && (m_lft >= q ) && (ipb*m_lft/q <= 1024) );
 
     dim3 block( ipb*m_lft/q, 1, 1 );
     dim3 grid ( (num_instances+ipb-1)/ipb, 1, 1);  // BUG: it might not fit exactly!
@@ -670,6 +671,7 @@ void runNaiveMuls(uint64_t total_work) {
 //    testNsqMul<Base, 2048>( total_work/(2048), h_as, h_bs, h_rs_gmp, h_rs_our, WITH_VALIDATION );
 
 #if 1
+    testNsqMul<Base,16384>( total_work/16384,h_as, h_bs, h_rs_gmp, h_rs_our, WITH_VALIDATION );
     testNsqMul<Base, 8192>( total_work/8192, h_as, h_bs, h_rs_gmp, h_rs_our, WITH_VALIDATION );
     testNsqMul<Base, 4096>( total_work/4096, h_as, h_bs, h_rs_gmp, h_rs_our, WITH_VALIDATION );
     testNsqMul<Base, 2048>( total_work/2048, h_as, h_bs, h_rs_gmp, h_rs_our, WITH_VALIDATION );
@@ -698,7 +700,9 @@ void runFFTMuls(uint64_t total_work) {
     mkRandArrays<32,32>( total_work/16, &h_as, &h_bs, &h_rs_gmp, &h_rs_our );
 
 #if 1
-    //testFftMul<Base, 4096*4>( total_work/(4096*4), h_as, h_bs, h_rs_gmp, h_rs_our, WITH_VALIDATION );
+    if (sizeof(uint_t) == 8)
+      testFftMul<Base, 4096*4>( total_work/(4096*4), h_as, h_bs, h_rs_gmp, h_rs_our, WITH_VALIDATION );
+
     testFftMul<Base, 4096*2>( total_work/(4096*2), h_as, h_bs, h_rs_gmp, h_rs_our, WITH_VALIDATION );
     testFftMul<Base, 4096>( total_work/4096, h_as, h_bs, h_rs_gmp, h_rs_our, WITH_VALIDATION );
     testFftMul<Base, 2048>( total_work/2048, h_as, h_bs, h_rs_gmp, h_rs_our, WITH_VALIDATION );
@@ -733,10 +737,10 @@ int main (int argc, char * argv[]) {
 
     //runPartValidationFFT();
 
-    //runAdditions<U64bits>(total_work);
-    //runNaiveMuls<U64bits> (total_work);
+    runAdditions<U64bits>(total_work);
+    runNaiveMuls<U64bits> (total_work);
     runFFTMuls<FftPrime64>(total_work);
-    //runFFTMuls<FftPrime32>(total_work);
+    runFFTMuls<FftPrime32>(total_work);
 
 #if 0       
     runAdditions<U32bits>(total_work);
