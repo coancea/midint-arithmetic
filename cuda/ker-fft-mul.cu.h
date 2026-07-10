@@ -53,7 +53,7 @@ struct FftPrime64 {
     static const uint32_t k = 29;
     static const uint_t   p = 4179340454199820289;
     static const uint_t   g = 21;
-    static const size_t   base = 31; //1 << 31;
+    static const size_t   base = 25; //1 << 31;
 };
 
 struct FftPrime32 {
@@ -68,7 +68,7 @@ struct FftPrime32 {
     static const uint32_t k = 3;
     static const uint_t   p = 3221225473;
     static const uint_t   g = 13;
-    static const size_t   base = 15; //1 << 15;
+    static const size_t   base = 10; //1 << 15;
 };
 
 
@@ -188,13 +188,17 @@ __device__ void permuteIP( uint32_t k, uint32_t t, rep_t* xss) {
     __syncthreads();
 }
 
+//
+// Fp     g   = Fp(Prime::g).pow( (uint_t) 1 << (Prime::n - ceilLg(n)) );
+// Fp   one   = Fp(Prime::g).pow((uint_t) 1 << Prime::n);
+//
 template<typename P>
 __host__ typename P::uint_t getOmega(uint32_t n) {
     // Fp     g   = Fp(Prime::g).pow((uint_t) 1 << (Prime::n - ceilLg(n)));
     using uint_t = typename P::uint_t;
-    uint32_t lgn = ceilLg<uint_t>(n);
+    uint32_t lgn = ceilLg<uint32_t>(n); //ceilLg<uint_t>(n);
     uint_t shft = P::n - lgn;
-    uint_t e = 1 << shft;
+    uint_t e = ((uint_t)1) << shft;
     return zmod_t<P>::pow(P::g, e);
 }
 
@@ -209,97 +213,6 @@ __host__ void mkOmegas(uint32_t n, typename P::uint_t omega, typename P::uint_t*
         acc = PF::mul(acc, omega); 
     }
 }
-
-#if 0
-template<typename P, uint32_t n>
-__device__ void fft1( uint32_t lgn, typename P::uint_t* omegas, typename P::uint_t* xss ) {
-    using uint_t = typename P::uint_t;
-    using PF = zmod_t<P>;
-    
-    //uint32_t lgn = ceilLg<uint_t>(n);
-    permuteIP<uint_t>( threadIdx.x, lgn, xss );
-    permuteIP<uint_t>( threadIdx.x + n/2, lgn, xss );
-    
-    for(int32_t q = 1; q <= lgn; q++) {
-        int32_t L   = 1 << q;
-        int32_t Ld2 = 1 << (q-1);
-        int32_t r   = n >> q;
-        
-        int32_t k = threadIdx.x >> (q-1);
-        int32_t j = threadIdx.x & (Ld2 - 1);
-        int32_t kLj = k*L + j;
-        uint_t omega_pow= omegas[r*j];
-        uint_t tau      = PF::mul( omega_pow , xss[kLj + Ld2] );
-        uint_t x_kLj    = xss[kLj];
-        xss[kLj]       = PF::add(x_kLj, tau);
-        xss[kLj + Ld2] = PF::sub(x_kLj, tau);
-        __syncthreads();
-    }
-}
-
-template<typename P, uint32_t n>
-__device__ void ifft1( uint32_t lgn, typename P::uint_t* omegas_inv, typename P::uint_t* xss ) {
-    using uint_t = typename P::uint_t;
-    using PF = zmod_t<P>;
-    
-    //uint_t omega = getOmega(n);
-    //uint_t omega_inv = PF::inv(omega);
-    uint_t n_inv = PF::inv(n);
-     
-    fft1<P,n>( lgn, omegas_inv, xss );
-
-    uint32_t ind = threadIdx.x;
-    xss[ind] = PF::mul(n_inv, xss[ind]);
-    ind += (n>>1);
-    xss[ind] = PF::mul(n_inv, xss[ind]);
-
-    __syncthreads();    
-}
-
-template<typename P, uint32_t M>
-__global__ void bmulFFT1( uint32_t clgm
-                       , typename P::uint_t* omegas
-                       , typename P::uint_t* omegas_inv
-                       , typename P::uint_t* ass
-                       , typename P::uint_t* bss
-                       , typename P::uint_t* rss 
-) {
-    using pft    = zmod_t<P>;
-    using uint_t = typename P::uint_t;
-    //const uint32_t shmem_len = M;
-    
-    extern __shared__ char sh_mem[];
-    uint_t* Ash = (uint_t*) sh_mem;
-    uint_t* Bsh = Ash + M;
-    uint_t* Tsh = Bsh + M;
-//    __shared__ uint_t Ash[shmem_len];
-//    __shared__ uint_t Bsh[shmem_len];
-//    __shared__ uint_t Tsh[shmem_len];
-
-    cpGlb2ShFFT<uint_t, 1, M, 2>(ass, bss, Ash, Bsh);
-
-    __syncthreads();
-
-    fft1<P,M>(clgm, omegas, Ash);
-    fft1<P,M>(clgm, omegas, Bsh);
-    
-    //let xy1 = map2 (pf.*) (x'[0:n/2]) (y'[0:n/2])
-    //let xy2 = map2 (pf.*) (x'[n/2:n]) (y'[n/2:n])
-    uint32_t ind = threadIdx.x;
-    Tsh[ind] = pft::mul(Ash[ind], Bsh[ind]);
-    ind += (M >> 1);
-    Tsh[ind] = pft::mul(Ash[ind], Bsh[ind]);
-    
-    __syncthreads();
-    ifft1<P,M>(clgm, omegas_inv, Tsh);
-    
-    __syncthreads();
-    cpSh2GlbFFT<uint_t, 1, M, 2>(Tsh, rss);
-}
-#endif
-////////////////////////////////////////////////
-/// New Version 
-////////////////////////////////////////////////
 
 template<typename P, uint32_t n, uint32_t Q>
 __device__ void fft ( typename P::uint_t* xss
@@ -510,6 +423,7 @@ polyFttKer ( uint32_t clgm
 
 
 template<typename P, uint32_t M, uint32_t Q>
+__launch_bounds__(M/(2*Q), 1024/(M/(2*Q)))
 __global__ void bmulFFTvalid( uint32_t clgm
                        , typename P::uint_t  invM
                        , typename P::uint_t* omegas

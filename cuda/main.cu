@@ -1,5 +1,4 @@
 #include "helper.h"
-//#include "goldenSeq.h"
 
 //#define WITH_INT_128 1
 
@@ -13,6 +12,8 @@ using namespace std;
 #define ERR         0.000005
 
 #define WITH_VALIDATION 1
+
+const size_t MAX_SHM_SIZE = 98304;
 
 
 template<int m, int nz>
@@ -260,19 +261,12 @@ void gpuMultiply( int num_instances
     dim3 block( ipb*m_lft/q, 1, 1 );
     dim3 grid ( (num_instances+ipb-1)/ipb, 1, 1);  // BUG: it might not fit exactly!
    
-#if 1
     { // maximize the amount of shared memory for the kernel
-        cudaFuncSetAttribute(bmulKerQ<Base,ipb,m,q>, cudaFuncAttributeMaxDynamicSharedMemorySize, 65536);
-        cudaFuncSetAttribute(polyKerQ<Base,ipb,m,q>, cudaFuncAttributeMaxDynamicSharedMemorySize, 65536);
-
-//        printf( "Cosmin shmem size: %ld, B: %d, ipb: %d, num-inst: %d, m_lft: %d\n"
-//              , ipb*2*m_lft*sizeof(uint_t), ipb*m_lft/q, ipb, num_instances, m_lft);
+        cudaFuncSetAttribute(bmulKerQ<Base,ipb,m,q>, cudaFuncAttributeMaxDynamicSharedMemorySize, MAX_SHM_SIZE);
+        cudaFuncSetAttribute(polyKerQ<Base,ipb,m,q>, cudaFuncAttributeMaxDynamicSharedMemorySize, MAX_SHM_SIZE);
     }    
-#endif
     const uint32_t shmemlen = ipb*2*m_lft*sizeof(uint_t);
     { // 4. dry run
-        //bmulKer<Base,ipb,m><<< grid, block, ipb*2*m*sizeof(uint_t) >>>(d_as, d_bs, d_rs);
-        //bmulKer<Base,ipb,m><<< grid, block >>>(d_as, d_bs, d_rs);
         bmulKerQ<Base,ipb,m,q><<< grid, block, shmemlen >>>(num_instances, d_as, d_bs, d_rs);
         cudaDeviceSynchronize();
         gpuAssert( cudaPeekAtLastError() );
@@ -287,7 +281,6 @@ void gpuMultiply( int num_instances
         gettimeofday(&t_start, NULL); 
         
         for(int i=0; i<GPU_RUNS_MUL; i++) {
-            //bmulKer<Base,ipb,m><<< grid, block >>>(d_as, d_bs, d_rs);
             bmulKerQ<Base,ipb,m,q><<< grid, block, shmemlen >>>(num_instances, d_as, d_bs, d_rs);
         }
         
@@ -452,15 +445,13 @@ void gpuMulFFT( int num_instances
     dim3 block( m/(2*Q), 1, 1 );
     dim3 grid (num_instances, 1, 1);
 
-/**
- * ToDo: compute: omega, omega_inv, omegas, omegas_inv and transfer the latter two to GPU space.
- */
     uint32_t clgm = ceilLg<uint32_t>(m);
     uint_t  invM = zmod_t<P>::inv(m);
     uint_t* h_omegas     = (uint_t*) malloc(m*sizeof(uint_t));
     uint_t* h_omegas_inv = (uint_t*) malloc(m*sizeof(uint_t));
     {
         uint_t omega = getOmega<P>(m);
+        //printf("OMEGA is: %lu\n", omega); // major source of bugs
         mkOmegas<P>(m, omega, h_omegas);
         cudaMemcpy(d_omegas, h_omegas, mem_one_bnum, cudaMemcpyHostToDevice);
         
@@ -470,14 +461,15 @@ void gpuMulFFT( int num_instances
     }
         
     { // maximize the amount of shared memory for the kernel
-        //cudaFuncSetAttribute(bmulFFT<P, m, Q>, cudaFuncAttributeMaxDynamicSharedMemorySize, 65536);
-        cudaFuncSetAttribute(bmulFFT<P, m, Q>, cudaFuncAttributeMaxDynamicSharedMemorySize, 65536);  // 131072 out of range
-        cudaFuncSetAttribute(polyFttKer<P, m, Q>, cudaFuncAttributeMaxDynamicSharedMemorySize, 65536);
+        //cudaFuncSetAttribute(bmulFFT<P, m, Q>, cudaFuncAttributeMaxDynamicSharedMemorySize, MAX_SHM_SIZE);
+        cudaFuncSetAttribute(bmulFFT<P, m, Q>, cudaFuncAttributeMaxDynamicSharedMemorySize, MAX_SHM_SIZE);
+        cudaFuncSetAttribute(polyFttKer<P, m, Q>, cudaFuncAttributeMaxDynamicSharedMemorySize, MAX_SHM_SIZE);
+        cudaFuncSetAttribute(bmulFFTvalid<P, m, Q>, cudaFuncAttributeMaxDynamicSharedMemorySize, MAX_SHM_SIZE);
     }    
     
     // 4. dry run
     {
-        bmulFFT<P, m, Q><<< grid, block, m*sizeof(uint_t) >>>
+        bmulFFTvalid<P, m, Q><<< grid, block, m*sizeof(uint_t) >>>
             ( clgm, invM, d_omegas, d_omegas_inv, d_as, d_bs, d_rs );
         cudaDeviceSynchronize();
         gpuAssert( cudaPeekAtLastError() );
@@ -491,7 +483,7 @@ void gpuMulFFT( int num_instances
         
         for(int i=0; i<GPU_RUNS_MUL; i++) 
         {
-            bmulFFT<P, m, Q><<< grid, block, m*sizeof(uint_t) >>>
+            bmulFFTvalid<P, m, Q><<< grid, block, m*sizeof(uint_t) >>>
                 ( clgm, invM, d_omegas, d_omegas_inv, d_as, d_bs, d_rs );
         }
         
@@ -589,69 +581,55 @@ void testFftMul ( int num_instances
 {
     using uint_t = typename Base::uint_t;
     using uhlf_t = typename Base::uhlf_t;
+    using ubig_t = typename Base::ubig_t;
+
+    const uint32_t B = Base::base;
     
     uhlf_t *h_as     = (uhlf_t*) h_as_64;
     uhlf_t *h_bs     = (uhlf_t*) h_bs_64;
     uint_t *h_rs_our = (uint_t*) h_rs_our_64;
     uint32_t *h_rs_gmp = (uint32_t*) h_rs_gmp_64;
 
-    if(with_validation)
-        gmpMultiply<m>(num_instances, (uint32_t*)h_as, (uint32_t*)h_bs, h_rs_gmp);
-        
     //const uint32_t x = Base::bits/32;
     const uint32_t x = 4 / sizeof(uhlf_t); //Base::bits/32;
-    assert( (Base::bits >= 32) && (Base::bits % 32 == 0) );
-    
-    gpuMulFFT<Base, m*x>(num_instances, h_as, h_bs, h_rs_our);
-    
-    if(with_validation)
-        validateExact<uint32_t>(h_rs_gmp, (uint32_t*)h_rs_our, num_instances*m);
-}
+    const int M = m*x;
+    assert( (Base::bits >= 32) && (Base::bits % 32 == 0) && ((M % 2) == 0) );
 
-template<typename Base, int m>
-void partValidFftMul ( typename Base::uhlf_t* h_as
-                     , typename Base::uhlf_t* h_bs
-                     , typename Base::uint_t* h_rs_ref
-                     )
-{
-    using uint_t = typename Base::uint_t;
-    using uhlf_t = typename Base::uhlf_t;
-    
-    uint_t* h_rs_our = (uint_t*) malloc( m * sizeof(uint_t) ); 
-    
-    gpuMulFFT<Base, m>(1, h_as, h_bs, h_rs_our);
+    { // fixing the range of the elements for FFT
+        const uhlf_t pow2base = (1 << B);
+        for(int i = 0; i < num_instances; i++) {
+          for(int j = 0; j < M/2; j++) {
+            h_as[i*M+j] = h_as[i*M+j] % pow2base;
+            h_bs[i*M+j] = h_bs[i*M+j] % pow2base;
+          }
+          for(int j = M/2; j < M; j++) {
+            h_as[i*M+j] = 0;
+            h_bs[i*M+j] = 0;
+          }
+        }
+    }
 
-    //printInstance<uhlf_t,m>(0, (uhlf_t*)h_rs_our);
-
-    validateExact<uint_t>(h_rs_ref, h_rs_our, m);
+    if(with_validation) {
+        uhlf_t* h_as_gmp = (uhlf_t*)calloc(num_instances*M, sizeof(uhlf_t));
+        uhlf_t* h_bs_gmp = (uhlf_t*)calloc(num_instances*M, sizeof(uhlf_t));
+        for(int i = 0; i < num_instances; i++) {
+            packBBits<uhlf_t>(h_as + i*M, M, B, h_as_gmp + i*M);            
+            packBBits<uhlf_t>(h_bs + i*M, M, B, h_bs_gmp + i*M);
+        }
+        gmpMultiply<m>(num_instances, (uint32_t*)h_as_gmp, (uint32_t*)h_bs_gmp, h_rs_gmp);
+        free(h_as_gmp); free(h_bs_gmp);
+    }
+        
+    gpuMulFFT<Base, M>(num_instances, h_as, h_bs, h_rs_our);
     
-    free(h_rs_our);
-}
-
-void runPartValidationFFT() {
-    //uint32_t inp_inv[] = { 2170333833, 97506133, 2151463229, 2106724456, 1111720637, 2039631599, 1651518977, 2515781039, 53415978, 3097490970, 451002497, 1928198602, 2032731680, 2298827368, 1582725215, 2780389298};
-    
-    using uhlf_t = typename FftPrime32::uhlf_t;
-    using uint_t = typename FftPrime32::uint_t;
-    
-    uhlf_t inp_a[] =   { 11400, 28374, 23152, 9576
-                       , 29511, 20787, 13067, 14015
-                       , 0, 0, 0, 0
-                       , 0, 0, 0, 0 
-                       };
-    uhlf_t inp_b[] =   { 30268, 20788, 8033, 15446
-                       , 26275, 11619,  2494,  7016
-                       , 0, 0, 0, 0
-                       , 0, 0, 0, 0
-                       };
-
-    uint_t ref[]   =   { 345055200, 1095807432, 1382179648, 1175142886
-                       , 2016084656, 2555168834, 2179032777, 1990011337
-                       , 1860865174, 1389799087, 942120918, 778961552
-                       , 341270975, 126631482, 98329240, 0
-                       };
-    
-    partValidFftMul<FftPrime32, 16>(inp_a, inp_b, ref);
+    if(with_validation) {
+        uint_t* h_rs_our_pack = (uint_t*) calloc( (unsigned int)num_instances*(M/2), sizeof(uint_t) );
+        for(int i = 0; i < num_instances; i++) {
+            evaluatePolynomial<uint_t, ubig_t>(h_rs_our + i*M, M, B, h_rs_our_pack + i*M/2);
+        }
+        validateExact<uint32_t>(h_rs_gmp, (uint32_t*)h_rs_our_pack, num_instances*(M/2));
+        free(h_rs_our_pack);
+    }
 }
 
 /////////////////////////////////////////////////////////
@@ -719,27 +697,19 @@ void runFFTMuls(uint64_t total_work) {
     //total_work = 4096*512;
     mkRandArrays<32,32>( total_work/16, &h_as, &h_bs, &h_rs_gmp, &h_rs_our );
 
-    //testFftMul<Base, 4096*2>( total_work/(4096*2), h_as, h_bs, h_rs_gmp, h_rs_our, 0 );
-    
-    //testFftMul<Base, 4096>( total_work/4096, h_as, h_bs, h_rs_gmp, h_rs_our, 0 );
-    
-    //testFftMul<Base, 2048>( total_work/2048, h_as, h_bs, h_rs_gmp, h_rs_our, 0 );
-    
-    //testFftMul<Base, 4096*4>( 8, h_as, h_bs, h_rs_gmp, h_rs_our, WITH_VALIDATION );
-
 #if 1
     //testFftMul<Base, 4096*4>( total_work/(4096*4), h_as, h_bs, h_rs_gmp, h_rs_our, WITH_VALIDATION );
-    testFftMul<Base, 4096*2>( total_work/(4096*2), h_as, h_bs, h_rs_gmp, h_rs_our, 0 );
-    testFftMul<Base, 4096>( total_work/4096, h_as, h_bs, h_rs_gmp, h_rs_our, 0 );
-    testFftMul<Base, 2048>( total_work/2048, h_as, h_bs, h_rs_gmp, h_rs_our, 0 );
-    testFftMul<Base, 1024>( total_work/1024, h_as, h_bs, h_rs_gmp, h_rs_our, 0 );
+    testFftMul<Base, 4096*2>( total_work/(4096*2), h_as, h_bs, h_rs_gmp, h_rs_our, WITH_VALIDATION );
+    testFftMul<Base, 4096>( total_work/4096, h_as, h_bs, h_rs_gmp, h_rs_our, WITH_VALIDATION );
+    testFftMul<Base, 2048>( total_work/2048, h_as, h_bs, h_rs_gmp, h_rs_our, WITH_VALIDATION );
+    testFftMul<Base, 1024>( total_work/1024, h_as, h_bs, h_rs_gmp, h_rs_our, WITH_VALIDATION );
 
-    testFftMul<Base,  512>( total_work/512,  h_as, h_bs, h_rs_gmp, h_rs_our, 0 );
-    testFftMul<Base,  256>( total_work/256,  h_as, h_bs, h_rs_gmp, h_rs_our, 0 );
-    testFftMul<Base,  128>( total_work/128,  h_as, h_bs, h_rs_gmp, h_rs_our, 0 );
-    testFftMul<Base,   64>( total_work/64,   h_as, h_bs, h_rs_gmp, h_rs_our, 0 );
-    testFftMul<Base,   32>( total_work/32,   h_as, h_bs, h_rs_gmp, h_rs_our, 0 );
-    testFftMul<Base,   16>( total_work/16,   h_as, h_bs, h_rs_gmp, h_rs_our, 0 );
+    testFftMul<Base,  512>( total_work/512,  h_as, h_bs, h_rs_gmp, h_rs_our, WITH_VALIDATION );
+    testFftMul<Base,  256>( total_work/256,  h_as, h_bs, h_rs_gmp, h_rs_our, WITH_VALIDATION );
+    testFftMul<Base,  128>( total_work/128,  h_as, h_bs, h_rs_gmp, h_rs_our, WITH_VALIDATION );
+    testFftMul<Base,   64>( total_work/64,   h_as, h_bs, h_rs_gmp, h_rs_our, WITH_VALIDATION );
+    //testFftMul<Base,   32>( total_work/32,   h_as, h_bs, h_rs_gmp, h_rs_our, WITH_VALIDATION );
+    //testFftMul<Base,   16>( total_work/16,   h_as, h_bs, h_rs_gmp, h_rs_our, WITH_VALIDATION );
 #endif
     
     free(h_as);
@@ -763,10 +733,10 @@ int main (int argc, char * argv[]) {
 
     //runPartValidationFFT();
 
-    runAdditions<U64bits>(total_work);
-    runNaiveMuls<U64bits> (total_work);
-    //runFFTMuls<FftPrime64>(total_work);
-    runFFTMuls<FftPrime32>(total_work);
+    //runAdditions<U64bits>(total_work);
+    //runNaiveMuls<U64bits> (total_work);
+    runFFTMuls<FftPrime64>(total_work);
+    //runFFTMuls<FftPrime32>(total_work);
 
 #if 0       
     runAdditions<U32bits>(total_work);

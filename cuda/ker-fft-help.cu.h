@@ -1,5 +1,83 @@
 #ifndef FFT_HELPER
 
+template<class uint>
+__host__ 
+void packBBits(uint* input, const size_t M, const uint32_t B, uint* output) {
+    // assumes the output is already zeroed
+    //uint32_t* output = (uint32_t*)calloc(M, sizeof(uint32_t));
+    const int word_num_bits = sizeof(uint)*8;
+    
+    size_t    out_idx = 0;    // Index of the current element in the output array
+    uint32_t  bit_pos = 0;    // Number of bits currently written to output[out_idx]
+    
+    // Mask to extract only the first B bits (LSBs) from the input elements
+    uint32_t mask_B = (1U << B) - 1;
+
+    for (size_t i = 0; i < M; ++i) {
+        // Extract the B bits
+        uint32_t bits_to_pack = input[i] & mask_B;
+        uint32_t bits_left = B;
+
+        while (bits_left > 0) {
+            // Stop if we exceed the output array boundaries
+            if (out_idx >= M) break;
+
+            uint32_t space_available = word_num_bits - bit_pos;
+            uint32_t bits_to_write = std::min(bits_left, space_available);
+
+            // Isolate the exact chunk of bits we can write into the current slot
+            uint32_t chunk_mask = (1U << bits_to_write) - 1;
+            uint32_t chunk = bits_to_pack & chunk_mask;
+
+            // Shift chunk to its correct position and combine with output
+            output[out_idx] |= (chunk << bit_pos);
+
+            // Update remaining bits and tracking positions
+            bits_to_pack >>= bits_to_write;
+            bits_left -= bits_to_write;
+            bit_pos += bits_to_write;
+
+            // Move to the next output element if the current one is completely filled
+            if (bit_pos == word_num_bits) {
+                bit_pos = 0;
+                out_idx++;
+            }
+        }
+    }
+}
+
+template<class uint, class uintd>
+__host__
+void evaluatePolynomial(uint* A, const size_t m, const uint32_t b, uint* R) {
+    // R is assumed initialized with zero
+    const int word_num_bits = sizeof(uint)*8;
+    for (size_t i = 0; i < m; ++i) {
+        uintd val = A[i];
+        
+        // Calculate the exact bit position where A[i] * 2^(b*i) starts
+        size_t   word_shift = (b * i) / word_num_bits;
+        uint32_t bit_shift  = (b * i) % word_num_bits;
+
+        // Shift the 32-bit coefficient into a 64-bit accumulator
+        uintd shifted_val = val << bit_shift;
+
+        // Propagate the addition and handles carries across the big integer array
+        uintd carry = shifted_val;
+        size_t idx = word_shift;
+
+        while (carry > 0 && idx < m) {
+            if(idx >= m/2) {
+                printf("Logical error: the compacted FFT result is larger than the precision!\n");
+                exit(1);
+            }
+            carry += R[idx];
+            R[idx] = static_cast<uint>(carry);
+            carry >>= word_num_bits; // Extract the carry for the next word
+            idx++;
+        }
+    }
+}
+
 template<typename P, uint32_t Q> 
 __device__ inline void
 splitFftReg ( typename P::uint_t  Rreg[Q]
