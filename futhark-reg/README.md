@@ -20,7 +20,7 @@ futhark bench --backend=cuda name-of-file.fut
 
 However, we have encountered some serious problems when using `futhark bench` on files that have multiple entry points: in some cases the performance is bottlenecked and in others it fails to validate (erroneously). Due to this, in some cases we have split the tests so that there exists only one entry point per file, see for example the `performance/perf-poly-xxx.fut` and the `validation/sanity-div-xxx.fut` series. 
 
-As well, in some cases `futhark bench` requires a compilation time that is longer than one is willing to wait for. This typically happens for highest precision. In those cases it is probably necessary to compile the futhark program directly and then run it by piping the corresponding dataset, as below:
+As well, in some cases `futhark bench` requires a compilation time that is longer than one is willing to wait for. This typically happens for highest precision. In those cases it is probably necessary to compile the futhark program directly and then run it by piping the corresponding dataset, as demonstrated below:
 
 ```
 futhark cuda perf-poly-8192Q8.fut
