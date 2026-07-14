@@ -143,7 +143,6 @@ entry radixSortU32 (m: i64)
   let xs' = #[noinline] radixIter 0 tmp xs
   
   let tmp1 = #[scratch]replicate (m * (B*Q)) 0u32
-  --let tmp2 = #[scratch]replicate (m * (B*Q)) 0u32
   
   let (xs_res, _) =
     loop (xs', tmp1) for im1 < 3i32 do
@@ -154,4 +153,8 @@ entry radixSortU32 (m: i64)
         reduce (&&) true <|
         map (\ i -> xs_res[i] <= xs_res[i+1]) <|
         iota (m * B * Q - 1) 
-  in  xs_res -- success
+  in xs_res -- success
+
+-- futhark dataset -b --i64-bounds=16384:16384 -g i64 -g [92274688]u32 | ./radix-sort-eff-2 -e radixSortU32
+-- futhark dataset -b --i64-bounds=4:4 -g i64 -g [22528]u32 | ./radix-sort-eff-2 -e radixSortU32
+-- futhark dataset -b --i64-bounds=4:4 -g i64 --u32-bounds=0:255 -g [22528]u32 --u32-bounds=0:0 -g [22528]u32 | ./radix-sort-eff --load-cuda=ker.cu  -e firstIter > res.txt
