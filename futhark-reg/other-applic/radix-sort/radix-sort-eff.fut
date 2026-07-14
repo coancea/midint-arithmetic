@@ -37,8 +37,17 @@ def ker2Blk (bit_beg: u32)
             (lgH: u32)
             (histo_loc: [B]u16)
             (histo_glb: [B]i64)
-            (xs: [B][Q]u32) : (*[B][Q]u32, [B][Q]i64) =
-  let elms = #[glb2reg_only(1)] manifest xs
+            (xs: [B*Q]u32) : (*[B][Q]u32, [B][Q]i64) =
+  let fcpy (shm: *acc ([B*Q]u32)) tid : acc ([B*Q]u32) =
+    loop shm for q < Q do
+      let ind = q*B+tid in write shm ind xs[ind]
+  let size = B*Q
+  let shm = (#[scratch]replicate size 0u32) :> [B*Q]u32
+  let shm = opaque <| scatter_stream shm fcpy (iota B)
+  --
+  let gcpy tid = #[sequential]map (\q -> shm[Q*tid + q]) (iota Q)
+  let elms = opaque <| #[toregmem(1)] map gcpy (iota B)
+  -- let elms = #[glb2reg_only(1)] manifest xs
   let elms =
     loop elms
     for i < i32.u32 lgH do
@@ -63,7 +72,7 @@ def ker2Blk (bit_beg: u32)
            let pos = if zo then s - 1 else (split + (u16.i64 tid * u16.i64 Q) + u16.i64 q) - s
            in  ( write shm (i64.u16 pos) elm, s ) ).0
       let size = B*Q
-      let shm = (#[scratch]replicate size 0u32) :> [B*Q]u32 --  !!! BUG: a #[scratch] annotation would result in eranneous result !!! 
+      let shm = (#[scratch]replicate size 0u32) :> [B*Q]u32
       let shm = opaque <| scatter_stream shm gg (iota B)
       --
       let freg tid =
@@ -109,7 +118,7 @@ def radixIter [m]
   let hist64T =
     unflatten hist64
     |> transpose |> manifest
-  let xs' = opaque <| map unflatten <| unflatten xs
+  let xs' = opaque <| unflatten xs
   let scat_dst = dst  --  replicate (m * (B*Q)) 0u32 --  #[scratch] 
   let (xs', inds') =
     unzip
