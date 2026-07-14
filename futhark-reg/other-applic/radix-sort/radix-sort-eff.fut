@@ -1,4 +1,4 @@
-import "../intrinsics-accs"
+import "../../intrinsics-accs"
 
 type etp = u32
 
@@ -17,8 +17,10 @@ def isBitUnset (bit_num: u32) (x: u32) : bool =
   let shft = x >> bit_num
   in 0 == (shft & 1)
 
-def ker1Blk [B][Q]
-            (bit_beg: u32)
+def B = 256i64
+def Q =  22i64
+
+def ker1Blk (bit_beg: u32)
             (lgH: u32)
             (xs: [B*Q]u32) : [B]u16 =
   let histo = replicate B 0u32
@@ -31,8 +33,7 @@ def ker1Blk [B][Q]
     reduce_by_index_stream histo (+) 0u32 facc (iota B)
   in  map u16.u32 histo
 
-def ker2Blk [B][Q]
-            (bit_beg: u32)
+def ker2Blk (bit_beg: u32)
             (lgH: u32)
             (histo_loc: [B]u16)
             (histo_glb: [B]i64)
@@ -50,6 +51,9 @@ def ker2Blk [B][Q]
       let buff  = scan (+) 0u16 tmp_buff
       let split = buff[B-1]
       --
+      -- BUG here, probably shm merging: the replicate creating shm
+      --   is in a race condition with buff; i.e., shm and buff use
+      --   the same memory buffer
       let gg (shm: *acc ([B*Q]u32)) tid : acc ([B*Q]u32) =
         let s = if tid == 0 then 0u16 else buff[tid-1] in
         (loop (shm,s)  for q < Q do
@@ -87,12 +91,12 @@ def ker2Blk [B][Q]
   let fin_inds = #[toregmem(1)] map finalInd (iota B)
   in  (elms, fin_inds)
 
-def radixIter [m][B][QQ]
-              (bit_beg: u32)
-              (lgH: u32)
-              (dst:*[m * (B*QQ)]u32)
-              (xs:  [m * (B*QQ)]u32) : *[m * (B*QQ)]u32 =
+def radixIter [m]
+      (bit_beg: u32)
+      (dst:*[m * (B*Q)]u32)
+      (xs:  [m * (B*Q)]u32) : *[m * (B*Q)]u32 =
   #[unsafe]
+  let lgH = 8u32
   let xs' = opaque <| unflatten xs
   let hist16 = mapIntra (ker1Blk bit_beg lgH) xs'
   let hist64 =
@@ -105,7 +109,7 @@ def radixIter [m][B][QQ]
     unflatten hist64
     |> transpose |> manifest
   let xs' = opaque <| map unflatten <| unflatten xs
-  let scat_dst = dst  --  replicate (m * (B*QQ)) 0u32 --  #[scratch] 
+  let scat_dst = dst  --  replicate (m * (B*Q)) 0u32 --  #[scratch] 
   let (xs', inds') =
     unzip
     <| map3Intra (ker2Blk bit_beg lgH) hist16 hist64T xs'
@@ -114,20 +118,18 @@ def radixIter [m][B][QQ]
 
 -- Simple test for fusing scatter-flatten with the preceding
 -- map nest that produces its indices and values
--- ==
+---- ==
 -- entry: firstIter 
 -- compiled random input { 16384i64 [92274688]u32 [92274688]u32 }
 
-let QQ : i64 = 22i64
-
 entry firstIter (m: i64)
-                (xs:   [m * (256*QQ)]u32)
-                (tmp1:*[m * (256*QQ)]u32)
-              : *[m * (256*QQ)]u32 =
-  radixIter 0u32 8u32 tmp1 xs
+                (xs:   [m * (B*Q)]u32)
+                (tmp1:*[m * (B*Q)]u32)
+              : *[m * (B*Q)]u32 =
+  radixIter 0u32 tmp1 xs
 
 -- ==
--- entry: radixSortU32 
+-- entry: radixSortU32
 -- compiled random input { 16384i64 [92274688]u32 }
 
 -- output { true } 
@@ -136,17 +138,26 @@ entry firstIter (m: i64)
 -- compiled random input { 2i64 [92274688]u32 } 
 
 entry radixSortU32 (m: i64)
-                   (xs  : *[m * (256*QQ)]u32) =
-                 -- : *[m * (256*QQ)]u32 =
+                   (xs  : *[m * (B*Q)]u32) =
+                 -- : *[m * (B*Q)]u32 =
   #[unsafe]
-  -- let lgH = 8u32
-  let tmp = replicate (m * (256*QQ)) 0u32
+  let tmp = #[scratch]replicate (m * (B*Q)) 0u32
+  
+  let xs' = #[noinline] radixIter 0 tmp xs
+  
+  let tmp1 = #[scratch]replicate (m * (B*Q)) 0u32
+  
   let (xs_res, _) =
-    loop (xs, tmp) for i < 4i32 do
-      let xs' = radixIter (8 * u32.i32 i) 8u32 tmp xs
-      in  (xs', xs)
+    loop (xs', tmp1) for im1 < 3i32 do
+      let i = im1 + 1
+      let xs'' = #[noinline] radixIter (8 * u32.i32 i) tmp1 xs'
+      in  (xs'', xs')
   let success = 
         reduce (&&) true <|
         map (\ i -> xs_res[i] <= xs_res[i+1]) <|
-        iota (m * 256 * QQ - 1) 
-  in  xs_res -- success
+        iota (m * B * Q - 1) 
+  in xs_res -- success
+
+-- futhark dataset -b --i64-bounds=16384:16384 -g i64 -g [92274688]u32 | ./radix-sort-eff -e radixSortU32
+-- futhark dataset -b --i64-bounds=4:4 -g i64 -g [22528]u32 | ./radix-sort-eff -e radixSortU32
+-- futhark dataset -b --i64-bounds=4:4 -g i64 --u32-bounds=0:255 -g [22528]u32 --u32-bounds=0:0 -g [22528]u32 | ./radix-sort-eff --load-cuda=ker2.cu  -e firstIter
