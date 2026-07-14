@@ -62,7 +62,8 @@ def ker2Blk (bit_beg: u32)
            let s   = s + u16.bool zo
            let pos = if zo then s - 1 else (split + (u16.i64 tid * u16.i64 Q) + u16.i64 q) - s
            in  ( write shm (i64.u16 pos) elm, s ) ).0
-      let shm = replicate (B*Q) 0u32  --  !!! BUG: a #[scratch] annotation would result in eranneous result !!! 
+      let size = B*Q
+      let shm = (#[scratch]replicate size 0u32) :> [B*Q]u32 --  !!! BUG: a #[scratch] annotation would result in eranneous result !!! 
       let shm = opaque <| scatter_stream shm gg (iota B)
       --
       let freg tid =
@@ -138,14 +139,15 @@ entry firstIter (m: i64)
 -- compiled random input { 2i64 [92274688]u32 } 
 
 entry radixSortU32 (m: i64)
-                   (xs  : *[m * (B*Q)]u32) =
+                   (xs  : [m * (B*Q)]u32) =
                  -- : *[m * (B*Q)]u32 =
   #[unsafe]
-  let tmp = #[scratch]replicate (m * (B*Q)) 0u32
+  let size = (m * (B*Q))
+  let tmp = (#[scratch] replicate size 0u32) :> [m * (B*Q)]u32
   
   let xs' = #[noinline] radixIter 0 tmp xs
   
-  let tmp1 = #[scratch]replicate (m * (B*Q)) 0u32
+  let tmp1 = (#[scratch]replicate size 0u32) :> [m * (B*Q)]u32
   
   let (xs_res, _) =
     loop (xs', tmp1) for im1 < 3i32 do
