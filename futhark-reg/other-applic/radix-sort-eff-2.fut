@@ -51,6 +51,9 @@ def ker2Blk (bit_beg: u32)
       let buff  = scan (+) 0u16 tmp_buff
       let split = buff[B-1]
       --
+      -- BUG here, probably shm merging: the replicate creating shm
+      --   is in a race condition with buff; i.e., shm and buff use
+      --   the same memory buffer
       let gg (shm: *acc ([B*Q]u32)) tid : acc ([B*Q]u32) =
         let s = if tid == 0 then 0u16 else buff[tid-1] in
         (loop (shm,s)  for q < Q do
@@ -153,8 +156,9 @@ entry radixSortU32 (m: i64)
         reduce (&&) true <|
         map (\ i -> xs_res[i] <= xs_res[i+1]) <|
         iota (m * B * Q - 1) 
-  in xs_res -- success
+  in xs_res
 
 -- futhark dataset -b --i64-bounds=16384:16384 -g i64 -g [92274688]u32 | ./radix-sort-eff-2 -e radixSortU32
 -- futhark dataset -b --i64-bounds=4:4 -g i64 -g [22528]u32 | ./radix-sort-eff-2 -e radixSortU32
 -- futhark dataset -b --i64-bounds=4:4 -g i64 --u32-bounds=0:255 -g [22528]u32 --u32-bounds=0:0 -g [22528]u32 | ./radix-sort-eff --load-cuda=ker.cu  -e firstIter > res.txt
+-- futhark dataset -b --i64-bounds=4:4 -g i64 --u32-bounds=0:255 -g [22528]u32 --u32-bounds=0:0 -g [22528]u32 | ./radix-sort-eff-2 --load-cuda=ker.cu  -e firstIter
