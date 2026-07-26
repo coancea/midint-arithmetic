@@ -140,8 +140,9 @@ def radixIter [m]
     <| map3Intra (ker2Blk bit_beg lgH indf) (iota m) hist16 hist64T 
   in scatter dst (flatten (map flatten inds')) (flatten (map flatten xs''))
 
-def radixSortU32 (m: i64) (ixfn : i64 -> i64 -> u32) : *[m*(B*Q)]u32 =
+def radixSortU32 (n: i64) (ixfn : i64 -> i64 -> u32) : []u32 = -- *[m*(B*Q)]u32 =
   #[unsafe]
+  let m = (n + (B*Q-1)) / (B*Q)
   let size = (m * (B*Q))
   let tmp = (#[scratch] replicate size 0u32) :> [m * (B*Q)]u32
   
@@ -164,13 +165,11 @@ def radixSortU32 (m: i64) (ixfn : i64 -> i64 -> u32) : *[m*(B*Q)]u32 =
 --
 
 entry mainU32 [n] (xs: *[n]u32) =
-  let m = (n + (B*Q-1)) / (B*Q)
-  let xs' = radixSortU32 m (felmpad n xs)
-
+  let xs' = radixSortU32 n (felmpad n xs)
   let success = 
         reduce (&&) true <|
         map (\ i -> xs'[i] <= xs'[i+1]) <|
-        iota (m * B * Q - 1)
+        iota (n - 1)
   in xs'
 --  in success
 
