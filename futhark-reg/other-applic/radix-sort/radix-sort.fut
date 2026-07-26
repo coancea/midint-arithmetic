@@ -140,47 +140,39 @@ def radixIter [m]
     <| map3Intra (ker2Blk bit_beg lgH indf) (iota m) hist16 hist64T 
   in scatter dst (flatten (map flatten inds')) (flatten (map flatten xs''))
 
-
--- Simple test for fusing scatter-flatten with the preceding
--- map nest that produces its indices and values
----- ==
--- entry: firstIter 
--- compiled random input { 16384i64 [92274688]u32 [92274688]u32 } auto output
-
-entry firstIter (m: i64)
-                (xs:   [m * (B*Q)]u32)
-                (tmp1:*[m * (B*Q)]u32)
-              : *[m * (B*Q)]u32 =
-  radixIter 0u32 tmp1 (felm (m * (B*Q)) xs)
-
--- ==
--- entry: radixSortU32
--- compiled random input { [100000000]u32 }
-
--- output { true } 
---
-
-entry radixSortU32 [n] (xs  : *[n]u32) =
-                    -- : *[m * (B*Q)]u32 =
+def radixSortU32 (m: i64) (ixfn : i64 -> i64 -> u32) : *[m*(B*Q)]u32 =
   #[unsafe]
-  let m = (n + (B*Q-1)) / (B*Q)
   let size = (m * (B*Q))
   let tmp = (#[scratch] replicate size 0u32) :> [m * (B*Q)]u32
   
-  let xs' = radixIter 0 tmp (felmpad n xs)
+  let xs' = radixIter 0 tmp ixfn
   
   let tmp1 = (#[scratch]replicate size 0u32) :> [m * (B*Q)]u32
   
   let (xs_res, _) =
     loop (xs', tmp1) for im1 < 3i32 do
       let i = im1 + 1
-      let xs'' = radixIter (8 * u32.i32 i) tmp1 (felm n xs')
+      let xs'' = radixIter (8 * u32.i32 i) tmp1 (felm size xs')
       in  (xs'', xs')
+  in xs_res
+
+-- ==
+-- entry: mainU32
+-- compiled random input { [100000000]u32 }
+
+-- output { true } 
+--
+
+entry mainU32 [n] (xs: *[n]u32) =
+  let m = (n + (B*Q-1)) / (B*Q)
+  let xs' = radixSortU32 m (felmpad n xs)
+
   let success = 
         reduce (&&) true <|
-        map (\ i -> xs_res[i] <= xs_res[i+1]) <|
-        iota (m * B * Q - 1) 
-  in xs_res -- success
+        map (\ i -> xs'[i] <= xs'[i+1]) <|
+        iota (m * B * Q - 1)
+  in xs'
+--  in success
 
 -- futhark dataset -b --i64-bounds=16384:16384 -g i64 -g [92274688]u32 | ./radix-sort-eff -e radixSortU32
 -- futhark dataset -b --i64-bounds=4:4 -g i64 -g [22528]u32 | ./radix-sort-eff -e radixSortU32
