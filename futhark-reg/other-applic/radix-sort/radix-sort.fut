@@ -20,25 +20,23 @@ def isBitUnset (bit_num: u32) (x: u32) : bool =
 def B = 256i64
 def Q =  22i64
 
-def felmpad (n: i64) (xs: []u32) (blkidx: i64) (locidx: i64) : u32 =
-  let ind = blkidx * (B*Q) + locidx
-  in  if ind < n
-      then #[unsafe]xs[ind]
-      else u32.highest
+def felmpad (n: i64) (xs: []u32) (ind: i64) : u32 =
+  if ind < n then #[unsafe]xs[ind] else u32.highest
 
-def felm (_n: i64) (xs: []u32) (blkidx: i64) (locidx: i64) : u32 =
-  #[unsafe] xs[blkidx * (B*Q) + locidx]
+def felm (_n: i64) (xs: []u32) (ind: i64) : u32 =
+  #[unsafe] xs[ind]
 
 def ker1Blk (bit_beg: u32)
             (lgH: u32)
-            (ixfn : i64 -> i64 -> u32)
+            (ixfn : i64 -> u32)
             (blkidx: i64)
           : [B]u16 =
   let histo = replicate B 0u32
   let facc (histo: *acc ([B]u32)) tid : acc ([B]u32) =
       loop histo for q < Q do
         let ind = q*B + tid
-        let bin = getBits bit_beg lgH (ixfn blkidx ind)
+        let elm = ixfn ( blkidx*(B*Q) + ind )
+        let bin = getBits bit_beg lgH elm
         in  write histo (i64.u32 bin) 1u32
   let histo =
     reduce_by_index_stream histo (+) 0u32 facc (iota B)
@@ -46,14 +44,16 @@ def ker1Blk (bit_beg: u32)
 
 def ker2Blk (bit_beg: u32)
             (lgH: u32)
-            (ixfn  : i64 -> i64 -> u32)
+            (ixfn  : i64 -> u32)
             (blkidx: i64)
             (histo_loc: [B]u16)
             (histo_glb: [B]i64)
           : (*[B][Q]u32, [B][Q]i64) =
   let fcpy (shm: *acc ([B*Q]u32)) tid : acc ([B*Q]u32) =
     loop shm for q < Q do
-      let ind = q*B+tid in write shm ind (ixfn blkidx ind)
+      let loc_ind = q*B+tid
+      let glb_ind = blkidx*(B*Q) + loc_ind
+      in  write shm loc_ind (ixfn glb_ind)
   let size = B*Q
   let shm = (#[scratch]replicate size 0u32) :> [B*Q]u32
   let shm = opaque <| scatter_stream shm fcpy (iota B)
@@ -119,7 +119,7 @@ def ker2Blk (bit_beg: u32)
 def radixIter [m]
       (bit_beg: u32)
       (dst:*[m * (B*Q)]u32)
-      (indf : i64 -> i64 -> u32)
+      (indf : i64 -> u32)
     : *[m * (B*Q)]u32 =
   #[unsafe]
   let lgH = 8u32
@@ -140,7 +140,7 @@ def radixIter [m]
     <| map3Intra (ker2Blk bit_beg lgH indf) (iota m) hist16 hist64T 
   in scatter dst (flatten (map flatten inds')) (flatten (map flatten xs''))
 
-def radixSortU32 (n: i64) (ixfn : i64 -> i64 -> u32) : []u32 = -- *[m*(B*Q)]u32 =
+def radixSortU32 (n: i64) (ixfn : i64 -> u32) : []u32 = -- *[m*(B*Q)]u32 =
   #[unsafe]
   let m = (n + (B*Q-1)) / (B*Q)
   let size = (m * (B*Q))
