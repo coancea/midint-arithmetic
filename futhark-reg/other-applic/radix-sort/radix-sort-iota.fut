@@ -118,17 +118,16 @@ def ker2Blk 't
       let sigma = #[toregmem(1)] map (fregN shm16) (iota B)
       in  (sigma, elms)
   -- END repeated-partitioning LOOP
-  -- copy the other data:
+  -- copy the other data to shared memory:
   let shm = (#[scratch]replicate size dummy) :> [B*Q]t
   let shm = opaque <| scatter_stream shm (cpGlb2Shm blkidx datixf) (iota B)
-  --
-  let cpyShm2Reg tid = #[sequential]map (\q -> shm[Q*tid + q]) (iota Q)
-  let datelms = opaque <| #[toregmem(1)] map cpyShm2Reg (iota B)
-  --
-  let permshm 't (regs: [B][Q]t) (shm: *acc ([B*Q]t)) tid : acc ([B*Q]t) =
-        loop shm for q < Q do write shm (i64.u16 sigma[tid,q]) regs[tid,q]
-  let shm = (#[scratch]replicate size dummy) :> [B*Q]t
-  let shm = opaque <| scatter_stream shm (permshm datelms) (iota B)
+  -- load data permuted by sigma to registers 
+  let sigmaPerm tid = #[sequential]map (\q -> shm[i32.u16 sigma[tid,q]]) (iota Q)
+  let datelms = opaque <| #[toregmem(1)] map sigmaPerm (iota B)
+  -- write them back to shared memory
+  let cp2shm 't (regs: [B][Q]t) (shm: *acc ([B*Q]t)) tid : acc ([B*Q]t) =
+        loop shm for q < Q do write shm (tid*Q+q) regs[tid,q]
+  let shm = opaque <| scatter_stream shm (cp2shm datelms) (iota B)
   -- load back to regs but transposed
   let cpyShm2RegT tid = #[sequential]map (\q -> shm[q*B + tid]) (iota Q)
   let datelms = opaque <| #[toregmem(1)] map cpyShm2RegT (iota B)
@@ -222,6 +221,10 @@ def radixSortU32 't (dummy: t) (n: i64) (keyixf : i64 -> u32) (datixf : i64 -> t
 
 -- ==
 -- entry: main
+-- compiled input { [13u32, 5u32, 6u32, 12u32, 11u32, 4u32, 2u32, 1u32, 8u32, 5u32, 15u32,  7u32] }
+-- output { [1u32, 2u32, 4u32, 5u32, 5u32, 6u32, 7u32, 8u32, 11u32, 12u32, 13u32, 15u32]
+--          [7i32, 6i32, 5i32, 1i32, 9i32, 2i32, 11i32, 8i32, 4i32, 3i32, 0i32, 10i32]
+--        }
 -- compiled random input { [100000000]u32 }
 
 -- output { true } 
@@ -234,7 +237,7 @@ entry main [n] (xs: *[n]u32) =
         map (\ i -> xs'[i] <= xs'[i+1]) <|
         iota (n - 1)
 --  in xs'
-  in (xs', iot')
+  in (xs'[:n], iot'[:n])
 --  in success
 
 
