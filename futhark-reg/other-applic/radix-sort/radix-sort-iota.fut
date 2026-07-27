@@ -221,14 +221,15 @@ def radixSortU32 't (dummy: t) (n: i64) (keyixf : i64 -> u32) (datixf : i64 -> t
 
 -- ==
 -- entry: main
--- compiled input { [13u32, 5u32, 6u32, 12u32, 11u32, 4u32, 2u32, 1u32, 8u32, 5u32, 15u32,  7u32] }
--- output { [1u32, 2u32, 4u32, 5u32, 5u32, 6u32, 7u32, 8u32, 11u32, 12u32, 13u32, 15u32]
---          [7i32, 6i32, 5i32, 1i32, 9i32, 2i32, 11i32, 8i32, 4i32, 3i32, 0i32, 10i32]
---        }
 -- compiled random input { [100000000]u32 }
 
 -- output { true } 
 --
+
+-- compiled input { [13u32, 5u32, 6u32, 12u32, 11u32, 4u32, 2u32, 1u32, 8u32, 5u32, 15u32,  7u32] }
+-- output { [1u32, 2u32, 4u32, 5u32, 5u32, 6u32, 7u32, 8u32, 11u32, 12u32, 13u32, 15u32]
+--          [7i32, 6i32, 5i32, 1i32, 9i32, 2i32, 11i32, 8i32, 4i32, 3i32, 0i32, 10i32]
+--        }
 
 entry main [n] (xs: *[n]u32) =
   let (xs', iot') = unzip <| radixSortU32 0i32 n (felmpad n xs) (\ (ind : i64) -> i32.i64 ind )
@@ -237,7 +238,7 @@ entry main [n] (xs: *[n]u32) =
         map (\ i -> xs'[i] <= xs'[i+1]) <|
         iota (n - 1)
 --  in xs'
-  in (xs'[:n], iot'[:n])
+  in (xs', iot')
 --  in success
 
 
