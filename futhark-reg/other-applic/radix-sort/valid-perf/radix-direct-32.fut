@@ -2,6 +2,12 @@ import "../helpers"
 import "../radix-sort"
 import "lib/github.com/diku-dk/sorts/radix_sort"
 
+----------------
+----------------
+--- Key: U32 ---
+----------------
+----------------
+
 -- ==
 -- entry: perfNewU32 perfOldU32
 -- compiled input { 
@@ -19,7 +25,6 @@ import "lib/github.com/diku-dk/sorts/radix_sort"
 
 entry perfNewU32 [n] (xs: *[n]u32) =
   radixSort u32.highest u32.highest 32 id id getBitsU32 xs
-  -- (radixSortU32 n (felmpad n xs))[:n]
 
 entry perfOldU32 [n] (xs: *[n]u32) =
   radix_sort u32.num_bits u32.get_bit xs
@@ -46,7 +51,6 @@ entry perfOldU32 [n] (xs: *[n]u32) =
 -- output {true }
 
 entry validNewOldU32 [n] (xs: [n]u32) =
-  -- let res_new = (radixSortU32 n (felmpad n xs))[:n]
   let res_new = radixSort u32.highest u32.highest 32 id id getBitsU32 xs
   let res_old = radix_sort u32.num_bits u32.get_bit xs
   in  reduce (&&) true <| map2 (==) res_new res_old
