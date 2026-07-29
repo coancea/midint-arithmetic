@@ -2,7 +2,7 @@ import "../../intrinsics-accs"
 import "helpers"
 
 def B = 256i64
-def Q =  22i64
+def Q =  25i64
 
 def ker2Blk 't
       (dummy: t)
