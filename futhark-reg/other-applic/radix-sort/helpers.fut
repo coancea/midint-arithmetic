@@ -4,6 +4,9 @@ def mapIntra f as = #[incremental_flattening(only_intra)] map f as
 def map2Intra f as bs = #[incremental_flattening(only_intra)] map2 f as bs
 def map3Intra f as bs cs = #[incremental_flattening(only_intra)] map3 f as bs cs
 
+def ixfnPadU 'tu (highest: tu) (n: i64) (ixfn: i64 -> *tu) (ind: i64) : *tu =
+  if ind < n then ixfn ind else copy highest
+
 def felmpad2uint 't 'tu [n] (to_bits: t -> *tu) (highest: tu) (xs: [n]t) (ind: i64) : *tu =
   if ind < n then to_bits (#[unsafe]xs[ind]) else copy highest
 
@@ -19,6 +22,10 @@ def felm 't  (xs: []t) (ind: i64) : *t =
 def getBitsU32 (bit_beg: u32) (num_bits: u32) (x: u32) : u32 =
   let mask = (1 << num_bits) - 1
   in (x >> bit_beg) & mask
+
+def getBitsU64 (bit_beg: u32) (num_bits: u32) (x: u64) : u32 =
+  let mask = (1 << num_bits) - 1
+  in  (u32.u64 (x >> u64.u32 bit_beg)) & mask
 
 def isBitUnset1 (bit_num: u32) (x: u32) : u32 =
   let shft = x >> bit_num
